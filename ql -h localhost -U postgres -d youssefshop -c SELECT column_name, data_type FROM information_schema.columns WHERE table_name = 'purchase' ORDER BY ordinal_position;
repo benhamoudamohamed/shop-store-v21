@@ -1,0 +1,22 @@
+                                          Table "public.purchase"
+   Column   |            Type             | Collation | Nullable |                 Default                  
+------------+-----------------------------+-----------+----------+------------------------------------------
+ id         | integer                     |           | not null | nextval('purchase_id_seq'::regclass)
+ clientName | character varying           |           | not null | 
+ email      | character varying           |           | not null | 
+ phone      | character varying           |           | not null | 
+ address    | character varying           |           | not null | 
+ subtotal   | numeric(10,2)               |           | not null | 
+ totalTax   | numeric(10,2)               |           | not null | '0'::numeric
+ couponCode | character varying           |           |          | 
+ discount   | numeric(10,2)               |           | not null | '0'::numeric
+ grandTotal | numeric(10,2)               |           | not null | 
+ currency   | character varying           |           | not null | 'TND'::character varying
+ status     | purchase_status_enum        |           | not null | 'PENDING'::purchase_status_enum
+ createdAt  | timestamp without time zone |           | not null | 'now'::text::timestamp(6) with time zone
+ updatedAt  | timestamp without time zone |           | not null | 'now'::text::timestamp(6) with time zone
+Indexes:
+    "PK_86cc2ebeb9e17fc9c0774b05f69" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "order_item" CONSTRAINT "FK_4321df45cdeda6eb04f3e6ad617" FOREIGN KEY ("purchaseId") REFERENCES purchase(id) ON DELETE CASCADE
+

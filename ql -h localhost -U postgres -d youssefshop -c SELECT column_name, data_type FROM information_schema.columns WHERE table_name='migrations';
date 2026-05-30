@@ -1,0 +1,9 @@
+                                   Table "public.migrations"
+  Column   |       Type        | Collation | Nullable |                Default                 
+-----------+-------------------+-----------+----------+----------------------------------------
+ id        | integer           |           | not null | nextval('migrations_id_seq'::regclass)
+ timestamp | bigint            |           | not null | 
+ name      | character varying |           | not null | 
+Indexes:
+    "PK_8c82d7f526340ab734260ea46be" PRIMARY KEY, btree (id)
+
