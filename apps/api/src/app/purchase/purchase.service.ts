@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -13,6 +13,9 @@ import { PurchaseStatus } from '@youssef-brand/shared/shared-enums';
 import { Seed } from '../shared/seed/seed.class';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { DeliverySlip } from '../delivery-slip/entities/delivery-slip.entity';
+import { TransactionService } from '../shared/helpers/transaction.service';
+import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
+import { DocumentNumberService } from '../shared/helpers/document-number.service';
 
 @Injectable()
 export class PurchaseService extends Seed { 
@@ -23,7 +26,10 @@ export class PurchaseService extends Seed {
     entityManager: EntityManager,
     @InjectRepository(Purchase)
     private purchaseRepository: Repository<Purchase>,
-    private dataSource: DataSource) { 
+    private dataSource: DataSource,
+    private transactionService: TransactionService,
+    private documentNumberService: DocumentNumberService,
+    private exceptionHelper: ExceptionHelperService) {
     super(entityManager)
     // this.fakeIt(Purchase)
   }
@@ -33,46 +39,41 @@ export class PurchaseService extends Seed {
    * Fetches all purchases with optional status filtering, and provides a breakdown of counts by status for dashboard summaries.
   */
   async findAll(status?: string): Promise<{ data: Purchase[]; count: number; breakdown: Record<string, number> }> {    
-    try {
-      // Query A: Fetch the actual rows and total counts
-      const mainQuery = this.purchaseRepository
-        .createQueryBuilder("purchase")
-        .leftJoinAndSelect("purchase.orderItems", "orderItem")
-        .leftJoinAndSelect("purchase.invoice", "invoice")
-        .leftJoinAndSelect("purchase.deliverySlip", "deliverySlip")
-        .orderBy('purchase.createdAt', 'DESC');
+    // Query A: Fetch the actual rows and total counts
+    const mainQuery = this.purchaseRepository
+      .createQueryBuilder("purchase")
+      .leftJoinAndSelect("purchase.orderItems", "orderItem")
+      .leftJoinAndSelect("purchase.invoice", "invoice")
+      .leftJoinAndSelect("purchase.deliverySlip", "deliverySlip")
+      .orderBy('purchase.createdAt', 'DESC');
 
-      if (status) {
-        mainQuery.andWhere("purchase.status = :status", { status });
-      }
-
-      const [purchases, count] = await mainQuery.getManyAndCount();
-
-      // Query B: Group by status and count occurrences for dashboard counters 📊
-      const rawBreakdown = await this.purchaseRepository
-        .createQueryBuilder("purchase")
-        .select("purchase.status", "status")
-        .addSelect("COUNT(purchase.id)", "total")
-        .groupBy("purchase.status")
-        .getRawMany();
-
-      // Transform raw SQL output [{ status: 'PENDING', total: '5' }] into a clean object: { PENDING: 5 }
-      const breakdown = rawBreakdown.reduce((acc, row) => {
-        acc[row.status] = Number(row.total);
-        return acc;
-      }, {} as Record<string, number>);
-
-      this.logger.log(`🟩 findAll successfully populated list and status summaries`);
-      
-      return {
-        count,
-        breakdown,
-        data: purchases
-      };
-    } catch (error) {
-      this.logger.error(`🟥 findAll catch Error: ${error}`);
-      throw new HttpException('INTERNAL SERVER ERROR', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (status) {
+      mainQuery.andWhere("purchase.status = :status", { status });
     }
+
+    const [purchases, count] = await mainQuery.getManyAndCount();
+
+    // Query B: Group by status and count occurrences for dashboard counters 📊
+    const rawBreakdown = await this.purchaseRepository
+      .createQueryBuilder("purchase")
+      .select("purchase.status", "status")
+      .addSelect("COUNT(purchase.id)", "total")
+      .groupBy("purchase.status")
+      .getRawMany();
+
+    // Transform raw SQL output [{ status: 'PENDING', total: '5' }] into a clean object: { PENDING: 5 }
+    const breakdown = rawBreakdown.reduce((acc, row) => {
+      acc[row.status] = Number(row.total);
+      return acc;
+    }, {} as Record<string, number>);
+
+    this.logger.log(`🟩 findAll successfully populated list and status summaries`);
+    
+    return {
+      count,
+      breakdown,
+      data: purchases
+    };
   }
  
   /**
@@ -88,14 +89,9 @@ export class PurchaseService extends Seed {
       this.logger.error(`🟥 Purchase not found with id: ${id}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Purchase Not Found', }, HttpStatus.NOT_FOUND);
     }
-    try {
-      this.logger.log(`🟩 findOne Purchase successfully with id: ${id}`);
-      return purchase;
-    }
-    catch (error) {
-      this.logger.error(`🟥 findOne Purchase catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    this.logger.log(`🟩 findOne Purchase successfully with id: ${id}`);
+    return purchase;
   }
 
   /**
@@ -126,32 +122,28 @@ export class PurchaseService extends Seed {
   async create(createPurchaseDto: CreatePurchaseDto): Promise<Purchase> {
     // 00. Fail fast if schema validation rejects input
     this.validatePurchasePayload(createPurchaseDto);
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
+    
+    return await this.transactionService.run(async (manager) => {
       this.logger.log(`🏁 Starting checkout transaction for: ${createPurchaseDto.email}`);
 
       // 1. Process items (validates stock, deducts inventory, builds OrderItem entities)
       const { orderItems, totalHT, totalTax } = await this.processProductItems(
-        createPurchaseDto.productItems, 
-        queryRunner.manager
+        createPurchaseDto.productItems,
+        manager,
       );
 
       // 2. Process coupon if provided
       const { couponEntity, discount } = await this.handleCouponApplication(
-        createPurchaseDto.coupon, 
-        totalHT, 
-        queryRunner.manager
+        createPurchaseDto.coupon,
+        totalHT,
+        manager,
       );
-      
+
       // 3. Compute final grand total financial matrix
       const grandTotal = Number((totalHT + totalTax - discount).toFixed(2));
-    
+
       // 4. Instantiate and commit the main purchase entity log
-      const purchase = queryRunner.manager.create(Purchase, {
+      const purchase = manager.create(Purchase, {
         clientName: createPurchaseDto.clientName,
         email: createPurchaseDto.email,
         phone: createPurchaseDto.phone,
@@ -165,19 +157,11 @@ export class PurchaseService extends Seed {
         status: PurchaseStatus.enum.PENDING,
         coupon: couponEntity ?? undefined,
       });
-            
-      const savedPurchase = await queryRunner.manager.save(purchase);
-      
-      await queryRunner.commitTransaction();
+
+      const savedPurchase = await manager.save(purchase);
       this.logger.log(`💰 Checkout completed! ID: ${savedPurchase.id} - Total: ${grandTotal} TND`);
       return savedPurchase;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error(`❌ Checkout transaction aborted and rolled back: ${error}`);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 
   /**
@@ -186,17 +170,13 @@ export class PurchaseService extends Seed {
    * Implements two main scenarios:
   */
   async updateStatus(purchaseId: string, updateStatusDto: UpdateStatusDto): Promise<Purchase> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const purchase = await queryRunner.manager.findOne(Purchase, {
+    return await this.transactionService.run(async (manager) => {
+      const purchase = await manager.findOne(Purchase, {
         where: { id: purchaseId },
-        relations: ['orderItems', 'orderItems.product', 'coupon', 'invoice', 'deliverySlip']
+        relations: ['orderItems', 'orderItems.product', 'coupon', 'invoice', 'deliverySlip'],
       });
 
-      if (!purchase) throw new HttpException('Purchase not found', HttpStatus.BAD_REQUEST); 
+      if (!purchase) throw new HttpException('Purchase not found', HttpStatus.BAD_REQUEST);
 
       const oldStatus = purchase.status;
       const { status: newStatus } = updateStatusDto;
@@ -207,37 +187,30 @@ export class PurchaseService extends Seed {
 
       // 🛑 SCENARIO A: Revert cancellation -> Re-deduct stock
       if (willBeAllocated && !wasAllocated) {
-        await this.allocateStockAndCoupon(purchase, queryRunner.manager);
+        await this.allocateStockAndCoupon(purchase, manager);
       }
       // 🛑 SCENARIO B: Move into Cancelled or Returned -> Return stock
       else if (!willBeAllocated && wasAllocated) {
-        await this.restoreStockAndCoupon(purchase, queryRunner.manager);
+        await this.restoreStockAndCoupon(purchase, manager);
       }
 
       // Update state parameters
       purchase.status = newStatus;
-      const updatedPurchase = await queryRunner.manager.save(purchase);
+      const updatedPurchase = await manager.save(purchase);
 
       // 🧾 AUTOMATIC INVOICE GENERATION WINDOW (PATTERN A)
       if (newStatus === PurchaseStatus.enum.DELIVERED) {
-        await this.handleInvoiceGeneration(updatedPurchase, queryRunner.manager);
+        await this.handleInvoiceGeneration(updatedPurchase, manager);
       }
 
       // 📦 DELIVERY SLIP GENERATION WINDOW
       if (newStatus === PurchaseStatus.enum.CONFIRMED) {
-        await this.handleDeliverySlipGeneration(updatedPurchase, queryRunner.manager);
+        await this.handleDeliverySlipGeneration(updatedPurchase, manager);
       }
-  
-      await queryRunner.commitTransaction();
+
       this.logger.log(`✅ Status safely changed from ${oldStatus} to ${newStatus} by Admin`);
       return updatedPurchase;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error(`❌ Update status failed: ${error}`);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 
   /**
@@ -255,15 +228,9 @@ export class PurchaseService extends Seed {
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Purchase Not Found', }, HttpStatus.NOT_FOUND);
     }
     
-    try {
-      await this.purchaseRepository.remove(purchase);
-      this.logger.log(`🗑️ delete purchase successfully`);
-      return { message: 'Purchase Deleted Successfully' }; 
-    }
-    catch (error) {
-      this.logger.error(`🟥 delete catch Error: ${error}`)
-      throw new InternalServerErrorException(error)
-    }
+    await this.purchaseRepository.remove(purchase);
+    this.logger.log(`🗑️ delete purchase successfully`);
+    return { message: 'Purchase Deleted Successfully' }; 
   }
 
 
@@ -454,9 +421,7 @@ export class PurchaseService extends Seed {
   private async handleInvoiceGeneration(purchase: Purchase, manager: EntityManager): Promise<void> {
     if (purchase.invoice) return;
 
-    const currentYear = new Date().getFullYear();
-    const totalInvoicesThisYear = await manager.count(Invoice);
-    const invoiceNumber = `INV-${currentYear}-${String(totalInvoicesThisYear + 1).padStart(5, '0')}`;
+    const invoiceNumber = await this.documentNumberService.generateInvoiceNumber(manager);
 
     const invoice = manager.create(Invoice, {
       invoiceNumber,
@@ -479,9 +444,7 @@ export class PurchaseService extends Seed {
   private async handleDeliverySlipGeneration(purchase: Purchase, manager: EntityManager): Promise<void> {
     if (purchase.deliverySlip) return;
 
-    const currentYear = new Date().getFullYear();
-    const totalDeliverySlipsThisYear = await manager.count(DeliverySlip);
-    const slipNumber = `DS-${currentYear}-${String(totalDeliverySlipsThisYear + 1).padStart(5, '0')}`;
+    const slipNumber = await this.documentNumberService.generateDeliverySlipNumber(manager);
 
     const deliverySlip = manager.create(DeliverySlip, {
       slipNumber,
@@ -533,5 +496,4 @@ export class PurchaseService extends Seed {
       this.logger.error(`❌ Stale orders cleanup failed: ${error}`);
     }
   }
-
 }

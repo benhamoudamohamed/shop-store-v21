@@ -1,6 +1,7 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { Image } from './entities/image.entity';
 import sharp from 'sharp';
 import { promises as fs } from 'fs';
@@ -11,7 +12,10 @@ export class ImageService {
   
   private logger = new Logger('🖼️ ImageService 🖼️')
 
-  constructor(@InjectRepository(Image) private readonly imageRepository: Repository<Image>) {}
+  constructor(
+    @InjectRepository(Image) private readonly imageRepository: Repository<Image>,
+    private readonly exceptionHelper: ExceptionHelperService,
+  ) {}
 
   async upload(file: Express.Multer.File): Promise<Image> {
     this.logger.log(`📤 upload call`);
@@ -50,17 +54,11 @@ export class ImageService {
     const thumbnailPath = join(uploadDir, image.thumbnailUrl);
 
     // 2. Delete files from disk (using try-catch in case they were already moved/deleted)
-    try {
-      await fs.unlink(originalPath);
-      await fs.unlink(thumbnailPath);
-    } catch (error) {
-      this.logger.error(`🟥 Failed to delete physical files for image: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
+    await fs.unlink(originalPath);
+    await fs.unlink(thumbnailPath);
     this.logger.log(`🗑️ Remove the images from the database`);
+
     // 3. Remove the record from the database
     await this.imageRepository.remove(image);
   }
-  
 }

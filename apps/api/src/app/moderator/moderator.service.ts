@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository, DataSource, ILike } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -8,8 +8,10 @@ import { PaginateQuery, Paginated, PaginateConfig, paginate } from 'nestjs-pagin
 import { Order } from 'nestjs-paginate/lib/helper';
 import { GLOBAL_PAGINATION_CONFIG } from '../../main';
 import { Moderator } from './entities/moderator.entity';
+import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { HelperService } from '../shared/helpers/helper.service';
 import { MailService } from '../shared/email/sendEmail';
+import { TransactionService } from '../shared/helpers/transaction.service';
 import { Seed } from '../shared/seed/seed.class';
 import { CreateUserDto, UpdateUserPasswordDto } from '@youssef-brand/shared/shared-dto';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
@@ -27,30 +29,27 @@ export class ModeratorService extends Seed {
     private dataSource: DataSource,
     private configService: ConfigService,
     private helperService: HelperService,
-    private mailService: MailService) {
+    private mailService: MailService,
+    private transactionService: TransactionService,
+    private exceptionHelper: ExceptionHelperService) {
       super(entityManager)
       // this.fakeIt(Moderator) 
   } 
  
   // Start findAllUsers
   async findAllUsers(): Promise<{ data: Moderator[]; count: number }> {    
-    try {
-      const [users, count] = await this.moderatorRepository
-      .createQueryBuilder("moderator")
-      .leftJoinAndSelect("moderator.tokens", "token")
-      .orderBy('moderator.createdAt', 'DESC')
-      .getManyAndCount()
+    
+    const [users, count] = await this.moderatorRepository
+    .createQueryBuilder("moderator")
+    .leftJoinAndSelect("moderator.tokens", "token")
+    .orderBy('moderator.createdAt', 'DESC')
+    .getManyAndCount()
 
-      this.logger.log(`🟩 findAllUsers successfully`);
-      return {
-        count: count,
-        data: users,
-      };
-    }
-    catch (error) {
-      this.logger.error(`🟥 findAllUsers catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    this.logger.log(`🟩 findAllUsers successfully`);
+    return {
+      count: count,
+      data: users,
+    };
   }
   // End findAllUsers
 
@@ -67,14 +66,9 @@ export class ModeratorService extends Seed {
       // Cast the sort order to Order<Moderator>[]
       defaultSortBy: [['createdAt', 'DESC']] as Order<Moderator>[],
     };
-
-    try {
-      this.logger.log(`🟩 findAll By Pagination successfully`);
-      return await paginate<Moderator>(paginateQuery, queryBuilder, config)
-    } catch (error) {
-      this.logger.error(`🟥 findAll By Pagination catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    this.logger.log(`🟩 findAll By Pagination successfully`);
+    return await paginate<Moderator>(paginateQuery, queryBuilder, config)
   }
   // End findAllbyPagination
 
@@ -85,14 +79,9 @@ export class ModeratorService extends Seed {
       this.logger.error(`🟥 user not found with id: ${id}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'User Not Found', }, HttpStatus.NOT_FOUND);
     }
-    try {
-      this.logger.log(`🟩 findOne user successfully with id: ${id}`);
-      return user;
-    }
-    catch (error) {
-      this.logger.error(`🟥 findOne user catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+  
+    this.logger.log(`🟩 findOne user successfully with id: ${id}`);
+    return user;
   }
   // End findbyId
 
@@ -104,14 +93,9 @@ export class ModeratorService extends Seed {
       this.logger.error(`user not found with firstname: ${fullName}`);
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'User Not Found', }, HttpStatus.NOT_FOUND);
     }
-    try {
-      this.logger.log(`🟩 findByName user successfully with: ${fullName}`);
-      return user;
-    }
-    catch (error) {
-      this.logger.error(`🟥 findByName user catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    this.logger.log(`🟩 findByName user successfully with: ${fullName}`);
+    return user;
   }
   // End findByName
 
@@ -122,27 +106,18 @@ export class ModeratorService extends Seed {
       this.logger.error(`🟥 user not found with email: ${email}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'User Not Found', }, HttpStatus.NOT_FOUND);
     }
-    try {
-      this.logger.log(`🟩 findbyMail user successfully with email: ${email}`);
-      return user;
-    }
-    catch (error) {
-      this.logger.error(`🟥 findbyMail user catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    this.logger.log(`🟩 findbyMail user successfully with email: ${email}`);
+    return user;
   }
   // End findbyMail
 
   // Start create
   async create(data: CreateUserDto): Promise<Moderator> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
+    return await this.transactionService.run(async (manager) => {
       const { fullName, email, password } = data;
 
-      const newUser = queryRunner.manager.create(Moderator, {
+      const newUser = manager.create(Moderator, {
         fullName,
         email,
         password: await this.helperService.hashData(password),
@@ -162,30 +137,13 @@ export class ModeratorService extends Seed {
         link: 'api/contactadmin/',
         userId: '',
         buttonTitle: 'Contact Admin',
-      }
+      };
 
-      const user = await queryRunner.manager.save(newUser);     
-      await this.mailService.sendEmail(emailData)
-      
+      const user = await manager.save(newUser);
+      await this.mailService.sendEmail(emailData);
       this.logger.log(`✅ create user successfully with ${data}`);
-      await queryRunner.commitTransaction();
       return user;
-    } catch (error) {
-      this.logger.error(`🟥 create user catch error: ${error}`);
-      await queryRunner.rollbackTransaction();
-      if (typeof error === 'object' && error !== null && 'code' in error) {
-        const dbError = error as { code: string };
-        if (dbError.code === '23505') {
-          throw new HttpException({status: HttpStatus.FORBIDDEN, error: 'Email already exists'}, HttpStatus.FORBIDDEN);
-        }
-        throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-      else {
-        throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
   // End create
 
@@ -194,15 +152,10 @@ export class ModeratorService extends Seed {
     const user = await this.findbyId(id)
     const newUser = new Moderator();
     newUser.fullName = fullName;
-    try {
-      await this.moderatorRepository.update(user.id, {...newUser});
-      this.logger.log(`🟩 update user successfully for: ${user.email}`);
-      return await this.findbyId(id);
-    }
-    catch (error) {
-      this.logger.error(`🟥 update user catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    await this.moderatorRepository.update(user.id, {...newUser});
+    this.logger.log(`🟩 update user successfully for: ${user.email}`);
+    return await this.findbyId(id);
   }
   // End editName
 
@@ -210,29 +163,19 @@ export class ModeratorService extends Seed {
   async toggleUserStatus(id: string, status: boolean): Promise<Moderator> {
     const user = await this.findbyId(id)
 
-    try {
-      const newUser = new Moderator();
-      newUser.isActivated = status;
-      await this.moderatorRepository.update(user.id, {...newUser});
+    const newUser = new Moderator();
+    newUser.isActivated = status;
+    await this.moderatorRepository.update(user.id, {...newUser});
 
-      const action = status ? 'Activated' : 'Deactivated';
-      this.logger.log(`✅ toggle User Status successfully for: ${user.email} with status: ${action}`);
-      return await this.findbyId(id);
-    }
-    catch (error) {
-      this.logger.error(`🟥 toggleUserStatus catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    const action = status ? 'Activated' : 'Deactivated';
+    this.logger.log(`✅ toggle User Status successfully for: ${user.email} with status: ${action}`);
+    return await this.findbyId(id);
   }
   // End Activate user
 
   // Start updatePassword  
   async sendVerificationCode(email: string): Promise<{ message: string }> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    const user = await queryRunner.manager.findOne(Moderator, { where: { email } });
+    const user = await this.dataSource.manager.findOne(Moderator, { where: { email } });
 
     if(!user) {
       this.logger.error(`user not found with email: ${email}`);
@@ -259,20 +202,12 @@ export class ModeratorService extends Seed {
         buttonTitle: 'Contact Admin',
       }
 
-      try {
-        await queryRunner.manager.update(Moderator, user.id, {...newUser});
-        await this.mailService.sendEmail(emailData)
-        await queryRunner.commitTransaction();
+      return await this.transactionService.run(async (manager) => {
+        await manager.update(Moderator, user.id, {...newUser});
+        await this.mailService.sendEmail(emailData);
         this.logger.log(`🟩 sendVerificationCode user successfully with: ${email}`);
         return { message: 'Verification Code Sent successfully' };
-      }
-      catch (error) {
-        await queryRunner.rollbackTransaction();
-        this.logger.error(`🟥 sendVerificationCode user catch Error: ${error}`)
-        throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-      } finally {
-        await queryRunner.release();
-      }
+      });
     }
     else {
       this.logger.error(`sendVerificationCode call: Email Not Activated: ${user.email}, userPass: ${user.password}`);
@@ -304,15 +239,9 @@ export class ModeratorService extends Seed {
         this.logger.error(`resetPassowrd call: Invalid credentials: user: ${email}`);
         throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Invalid Credentials', }, HttpStatus.NOT_FOUND);
       }
-
-      try {
-        this.logger.log(`✅ verifyCode Successfully from user: ${user.email}`);
-        return { message: 'Code verified successfully' };
-      }
-      catch(error) {
-        this.logger.error(`verifyCode catch error: ${error}`);
-        throw new InternalServerErrorException(error)
-      }
+      
+      this.logger.log(`✅ verifyCode Successfully from user: ${user.email}`);
+      return { message: 'Code verified successfully' };
     }
     else {
       this.logger.error(`sendVerificationCode call: Email Not Activated: ${user.email}, userPass: ${user.password}`);
@@ -321,16 +250,12 @@ export class ModeratorService extends Seed {
   }
 
   async updatePassword(data: UpdateUserPasswordDto): Promise<{ message: string }> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     const { email, password } = data;
 
     const user = await this.moderatorRepository
-      .createQueryBuilder("moderator")
-      .where("moderator.email like :email", { email:`%${email}%` })
-      .addSelect("moderator.password")
+      .createQueryBuilder('moderator')
+      .where('moderator.email like :email', { email:`%${email}%` })
+      .addSelect('moderator.password')
       .getOne()
 
     if(!user) {
@@ -355,36 +280,23 @@ export class ModeratorService extends Seed {
 
     const newUser = new Moderator();
     newUser.password = await this.helperService.hashData(password);
-
-    try {
-      await queryRunner.manager.update(Moderator, user.id, {...newUser});
-      await this.mailService.sendEmail(emailData)
-      await queryRunner.commitTransaction();
+    
+    return await this.transactionService.run(async (manager) => {
+      await manager.update(Moderator, user.id, {...newUser});
+      await this.mailService.sendEmail(emailData);
       this.logger.log(`✅ updatePassword successfully for: ${email}`);
       return { message: 'Password updated successfully' };
-    }
-    catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error(`🟥 updatePassword catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
   // end updatePassword
 
   // Start delete
   async delete(id: string): Promise<{ message: string }> {
     const user = await this.findbyId(id)
-    try {
-      await this.moderatorRepository.delete(user.id)
-      this.logger.log(`🟩 delete user successfully with email: ${user.email}`);
-      return { message: 'User Deleted Successfully' };
-    }
-    catch (error) {
-      this.logger.error(`🟥 delete catch Error: ${error}`)
-      throw new InternalServerErrorException(error)
-    }
+    
+    await this.moderatorRepository.delete(user.id)
+    this.logger.log(`🟩 delete user successfully with email: ${user.email}`);
+    return { message: 'User Deleted Successfully' };
   }
   // End delete
 }

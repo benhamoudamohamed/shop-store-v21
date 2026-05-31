@@ -12,7 +12,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @UseGuards(AuthenticationGuard, RolesGuard)
-  @RolesDecorator(UserRole.enum.ADMIN)
+  @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
   @Get('all')
   @HttpCode(HttpStatus.OK)
   findAllUsers(): Promise<{ data: Admin[]; count: number }> {  

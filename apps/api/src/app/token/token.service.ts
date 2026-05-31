@@ -52,17 +52,11 @@ export class TokenService {
       return acc;
     }, {} as Record<string, Token[]>);
 
-    try {
-      this.logger.log(`🟩🎉 findAll successfully`);
-      return {
-        count: count,
-        data: groupedByRole
-      };
-    }
-    catch (error) {
-      this.logger.error(`🟥🚨 findAll catch Error: ${error}`)
-      this.exceptionHelper.handleError(error);
-    }
+    this.logger.log(`🟩🎉 findAll successfully`);
+    return {
+      count: count,
+      data: groupedByRole
+    };
   }
   // End FindAll
 
@@ -76,15 +70,9 @@ export class TokenService {
       this.logger.error(`🟥🚨 Token not found with id: ${id}`)
       throw new HttpException({ status: HttpStatus.NOT_FOUND, error: 'Token Not Found' }, HttpStatus.NOT_FOUND);
     }
-
-    try {
-      this.logger.log(`🟩🎉 findbyId successfully with id: ${id}`);
-      return token;
-    }
-    catch (error) {
-      this.logger.error(`🟥🚨 findbyId catch Error: ${error}`)
-      this.exceptionHelper.handleError(error);
-    }
+    
+    this.logger.log(`🟩🎉 findbyId successfully with id: ${id}`);
+    return token;
   }
   // End findbyId
 
@@ -121,35 +109,30 @@ export class TokenService {
 
     const hashedKey = await this.helperService.hashData(key);
     const hashedToken = await this.helperService.hashData(value);
+    
+    const repository = manager ? manager.getRepository(Token) : this.tokenRepository;
+    const token = await repository.findOne({ where: { id: tokenId } });
 
-    try {
-      const repository = manager ? manager.getRepository(Token) : this.tokenRepository;
-      const token = await repository.findOne({ where: { id: tokenId } });
-
-      if (!token) {
-        this.logger.error(`🟥🚨 Token not found before update: ${tokenId}`);
-        throw new HttpException({ status: HttpStatus.NOT_FOUND, error: 'Token Not Found' }, HttpStatus.NOT_FOUND);
-      }
-
-      token.accessToken = hashedToken;
-      token.accessKey = hashedKey;
-      await repository.save(token);
-
-      const updatedToken = await (manager
-        ? manager.findOne(Token, { where: { id: tokenId }, relations: ['owner', 'admin', 'moderator'] })
-        : this.tokenRepository.findOne({ where: { id: tokenId }, relations: ['owner', 'admin', 'moderator'] }));
-
-      if (!updatedToken) {
-        this.logger.error(`🟥🚨 Token not found after update: ${tokenId}`);
-        throw new HttpException({ status: HttpStatus.NOT_FOUND, error: 'Token Not Found' }, HttpStatus.NOT_FOUND);
-      }
-
-      this.logger.log(`🔄 Update hashed token successfully`);
-      return updatedToken;
-    } catch (error) {
-      this.logger.error(`🟥🚨 updateHashes Catch Error: ${error}`)
-      this.exceptionHelper.handleError(error);
+    if (!token) {
+      this.logger.error(`🟥🚨 Token not found before update: ${tokenId}`);
+      throw new HttpException({ status: HttpStatus.NOT_FOUND, error: 'Token Not Found' }, HttpStatus.NOT_FOUND);
     }
+
+    token.accessToken = hashedToken;
+    token.accessKey = hashedKey;
+    await repository.save(token);
+
+    const updatedToken = await (manager
+      ? manager.findOne(Token, { where: { id: tokenId }, relations: ['owner', 'admin', 'moderator'] })
+      : this.tokenRepository.findOne({ where: { id: tokenId }, relations: ['owner', 'admin', 'moderator'] }));
+
+    if (!updatedToken) {
+      this.logger.error(`🟥🚨 Token not found after update: ${tokenId}`);
+      throw new HttpException({ status: HttpStatus.NOT_FOUND, error: 'Token Not Found' }, HttpStatus.NOT_FOUND);
+    }
+
+    this.logger.log(`🔄 Update hashed token successfully`);
+    return updatedToken;
   }
   // End updateHashes
 
@@ -253,15 +236,9 @@ export class TokenService {
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'No Token To Revoke', }, HttpStatus.NOT_FOUND);
     }
     
-    try {
-      await this.tokenRepository.delete({ isRevoked: true});
-      this.logger.log(`🟩🎉 removeAll successfully`);
-      return tokens;
-    }
-    catch (error) {
-      this.logger.error(`🟥🚨 removeAll catch Error: ${error}`)
-      this.exceptionHelper.handleError(error);
-    }
+    await this.tokenRepository.delete({ isRevoked: true});
+    this.logger.log(`🟩🎉 removeAll successfully`);
+    return tokens;
   }
   // End removeAllRevoked
 
@@ -270,15 +247,10 @@ export class TokenService {
     this.logger.log(`🟩🎉 Remove token Call`);
 
     const token = await this.findbyId(id)
-    try {
-      await this.tokenRepository.delete(token.id)
-      this.logger.log(`🗑️ delete successfully`);
-      return new HttpException({description: 'Token Deleted Successfully'}, HttpStatus.OK);
-    }
-    catch (error) {
-      this.logger.error(`🟥 delete catch Error: ${error}`)
-      this.exceptionHelper.handleError(error);
-    }
+    
+    await this.tokenRepository.delete(token.id)
+    this.logger.log(`🗑️ delete successfully`);
+    return new HttpException({description: 'Token Deleted Successfully'}, HttpStatus.OK);
   }
   // End remove
 

@@ -1,6 +1,7 @@
-import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { Coupon } from './entities/coupon.entity';
 import { CreateCouponDto, CreateCouponSchema, UpdateExpirationDto, UpdateExpirationSchema } from './dto/create-coupon.dto';
 import { Seed } from '../shared/seed/seed.class';
@@ -13,37 +14,33 @@ export class CouponService extends Seed {
   constructor(
     entityManager: EntityManager,
     @InjectRepository(Coupon)
-    private couponRepository: Repository<Coupon>) { 
+    private couponRepository: Repository<Coupon>,
+    private exceptionHelper: ExceptionHelperService) { 
     super(entityManager)
     // this.fakeIt(Coupon)
   } 
   
   // Start findAll
   async findAll(): Promise<{ data: Partial<Coupon> & { isValid: boolean }[]; count: number }> {    
-    try {
-      const [coupons, count] = await this.couponRepository
-      .createQueryBuilder("coupon")
-      .orderBy('coupon.createdAt', 'DESC')
-      .getManyAndCount()
+    
+    const [coupons, count] = await this.couponRepository
+    .createQueryBuilder("coupon")
+    .orderBy('coupon.createdAt', 'DESC')
+    .getManyAndCount()
 
-      const dataWithValidity = coupons.map(coupon => {
-        const { ...couponData } = coupon; 
-        return {
-          ...couponData,
-          isValid: coupon.isValid
-        };
-      });
-
-      this.logger.log(`🟩 findAll successfully`);
+    const dataWithValidity = coupons.map(coupon => {
+      const { ...couponData } = coupon; 
       return {
-        count: count,
-        data: dataWithValidity,
+        ...couponData,
+        isValid: coupon.isValid
       };
-    }
-    catch (error) {
-      this.logger.error(`🟥 findAll catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    });
+
+    this.logger.log(`🟩 findAll successfully`);
+    return {
+      count: count,
+      data: dataWithValidity,
+    };
   }
   // End findAll
 
@@ -55,14 +52,9 @@ export class CouponService extends Seed {
       this.logger.error(`🟥 Coupon not found with id: ${id}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Coupon Not Found', }, HttpStatus.NOT_FOUND);
     }
-    try {
-      this.logger.log(`🟩 findOne Coupon successfully with id: ${id}`);
-      return coupon;
-    }
-    catch (error) {
-      this.logger.error(`🟥 findOne Coupon catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    this.logger.log(`🟩 findOne Coupon successfully with id: ${id}`);
+    return coupon;
   }
   // End findbyId
 
@@ -169,17 +161,10 @@ export class CouponService extends Seed {
       this.logger.error(`🟥 Coupon not found with id: ${id}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Coupon Not Found', }, HttpStatus.NOT_FOUND);
     }   
-    try {
-  
-      await this.couponRepository.delete(coupon.id)
-      this.logger.log(`🗑️ Coupon Deleted successfully`);
-      return { message: 'Coupon Deleted Successfully' };
-    }
-    catch (error) {
-      this.logger.error(`🟥 delete catch Error: ${error}`)
-      throw new InternalServerErrorException(error)
-    }
+
+    await this.couponRepository.delete(coupon.id)
+    this.logger.log(`🗑️ Coupon Deleted successfully`);
+    return { message: 'Coupon Deleted Successfully' };
   }
   // End delete
-
 }

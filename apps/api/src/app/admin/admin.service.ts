@@ -14,29 +14,23 @@ export class AdminService {
     @InjectRepository(Admin)
     private adminRepository: Repository<Admin>,
     private dataSource: DataSource,
-    private helperService: HelperService) {
+    private helperService: HelperService,) {
     // this.createUniqueAdmin()
   }
 
   // Start findAllUsers
   async findAllUsers(): Promise<{ data: Admin[]; count: number }> {    
-    try {
-      const [users, count] = await this.adminRepository
-      .createQueryBuilder("user")
-      .leftJoinAndSelect("user.tokens", "token")
-      .orderBy('user.createdAt', 'DESC')
-      .getManyAndCount()
+    const [users, count] = await this.adminRepository
+    .createQueryBuilder("user")
+    .leftJoinAndSelect("user.tokens", "token")
+    .orderBy('user.createdAt', 'DESC')
+    .getManyAndCount()
 
-      this.logger.log(`🟩 findAllUsers successfully`);
-      return {
-        data: users,
-        count: count,
-      };
-    }
-    catch (error) {
-      this.logger.error(`🟥 findAllUsers catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    this.logger.log(`🟩 findAllUsers successfully`);
+    return {
+      data: users,
+      count: count,
+    };
   }
   // End findAllUsers 
 
@@ -47,14 +41,9 @@ export class AdminService {
       this.logger.error(`🟥 user not found with id: ${id}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Admin Not Found', }, HttpStatus.NOT_FOUND);
     }
-    try {
-      this.logger.log(`🟩 findOne admin successfully with id: ${id}`);
-      return user;
-    }
-    catch (error) {
-      this.logger.error(`🟥 findOne admin catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'INTERNAL SERVER ERROR', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
+    this.logger.log(`🟩 findOne admin successfully with id: ${id}`);
+    return user;
   }
   // End findbyId
 
@@ -68,22 +57,17 @@ export class AdminService {
       throw new HttpException({status: HttpStatus.FORBIDDEN, error: 'An admin already exists in the system.', }, HttpStatus.FORBIDDEN);
     }
 
-    try {
-      const hashedPassword = await this.helperService.hashData("passwordA1!")
-      const data = {
-        fullName: 'BigBoss',
-        email:  'benhamouda.mohamed@outlook.com',
-        password: hashedPassword,
-        userRole: UserRole.enum.ADMIN,
-        isActivated: true
-      }
-      const savedAdmin = await this.adminRepository.save(data);
-      this.logger.log(`✅ Admin created successfully}`);
-      return savedAdmin;
-    } catch (error) {
-      this.logger.error(`🟥 create admin catch error: ${error}`);
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    } 
+    const hashedPassword = await this.helperService.hashData("passwordA1!")
+    const data = {
+      fullName: 'BigBoss',
+      email:  'benhamouda.mohamed@outlook.com',
+      password: hashedPassword,
+      userRole: UserRole.enum.ADMIN,
+      isActivated: true
+    }
+    const savedAdmin = await this.adminRepository.save(data);
+    this.logger.log(`✅ Admin created successfully}`);
+    return savedAdmin;
   }
   // End create
   
@@ -102,17 +86,12 @@ export class AdminService {
       this.logger.error(`🟥 updatePassword user not found with email: ${email}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'User Not Found', }, HttpStatus.NOT_FOUND);
     }
+  
+    const newUser = new Admin();
+    newUser.password = await this.helperService.hashData(password);
+    await this.adminRepository.update(user.id, {...newUser});
     
-    try {
-      const newUser = new Admin();
-      newUser.password = await this.helperService.hashData(password);
-      await this.adminRepository.update(user.id, {...newUser});
-      this.logger.log(`🟩 update user successfully for: ${user.email}`);
-      return await this.findbyId(user.id);
-    }
-    catch (error) {
-      this.logger.error(`🟥 updatePassword catch Error: ${error}`)
-      throw new HttpException({status: HttpStatus.INTERNAL_SERVER_ERROR, error: 'Internal Server Error', }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    this.logger.log(`🟩 update user successfully for: ${user.email}`);
+    return await this.findbyId(user.id);
   }
 }

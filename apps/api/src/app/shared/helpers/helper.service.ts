@@ -13,7 +13,7 @@ export class HelperService {
 
   constructor(private configService: ConfigService) { }
 
-  async hashData(data: any) {
+  async hashData(data: string): Promise<string> {
     return await argon2.hash(data); 
   }
 

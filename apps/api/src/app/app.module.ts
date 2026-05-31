@@ -20,6 +20,7 @@ import { PurchaseModule } from './purchase/purchase.module';
 import { OrderItemModule } from './orderItem/order-item.module';
 import { CouponModule } from './coupon/coupon.module';
 import { InvoiceModule } from './invoice/invoice.module';
+import { SharedModule } from './shared/shared.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -38,6 +39,7 @@ const ENV = process.env.NODE_ENV;
       rootPath: join(__dirname, '..', 'client'),
       exclude: ['/api*path']
     }),
+    SharedModule,
     OwnerModule,
     TokenModule,
     AdminModule,
