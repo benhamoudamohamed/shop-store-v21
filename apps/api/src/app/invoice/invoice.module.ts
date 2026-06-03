@@ -14,6 +14,7 @@ import { DeliverySlipService } from '../delivery-slip/delivery-slip.service';
 import { PurchaseValidationService } from '../purchase/purchase-validation.service';
 import { PurchaseItemService } from '../purchase/purchase-item.service';
 import { CouponAllocationService } from '../purchase/coupon-allocation.service';
+import { CouponValidationService } from '../coupon/coupon-validation.service';
 import { PurchaseStatusService } from '../purchase/purchase-status.service';
 
 @Module({
@@ -27,6 +28,7 @@ import { PurchaseStatusService } from '../purchase/purchase-status.service';
     PurchaseValidationService,
     PurchaseItemService,
     CouponAllocationService,
+    CouponValidationService,
     PurchaseStatusService,
     DeliverySlipService,
     TokenService,
