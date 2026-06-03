@@ -1,10 +1,13 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { Coupon } from '../coupon/entities/coupon.entity';
+import { CouponValidationService } from '../coupon/coupon-validation.service';
 
 @Injectable()
 export class CouponAllocationService {
   protected logger = new Logger('🎟️ CouponAllocationService 🎟️');
+
+  constructor(private couponValidationService: CouponValidationService) {} 
 
   async applyCoupon(
     couponCode: string | undefined,
@@ -15,27 +18,28 @@ export class CouponAllocationService {
       return { couponEntity: null, discount: 0 };
     }
 
-    const couponEntity = await manager.findOne(Coupon, {
-      where: { code: couponCode },
-      lock: { mode: 'pessimistic_write' },
-    });
+    const normalizedCode = this.couponValidationService.normalizeCode(couponCode);
 
-    if (!couponEntity || !couponEntity.isValid) {
-      this.logger.warn(`🎟️ Invalid coupon attempt: ${couponCode}`);
-      throw new HttpException('Invalid or expired coupon', HttpStatus.BAD_REQUEST);
+    const couponEntity = await manager
+      .createQueryBuilder(Coupon, 'coupon')
+      .setLock('pessimistic_write')
+      .where('coupon.code = :code', { code: normalizedCode })
+      .getOne();
+
+    const validatedCoupon = this.couponValidationService.checkFound(couponEntity, normalizedCode);
+    this.couponValidationService.ensureValid(validatedCoupon);
+
+    const discount = Number((totalHT * (Number(validatedCoupon.discountPercentage) / 100)).toFixed(2));
+
+    validatedCoupon.usedCount += 1;
+    if (validatedCoupon.usedCount >= validatedCoupon.maxUses) {
+      validatedCoupon.isExpired = true;
     }
 
-    const discount = Number((totalHT * (Number(couponEntity.discountPercentage) / 100)).toFixed(2));
+    await manager.save(validatedCoupon);
+    this.logger.log(`🎟️ Immediate Allocation: Incremented coupon ${validatedCoupon.code} usage metrics.`);
 
-    couponEntity.usedCount += 1;
-    if (couponEntity.usedCount >= couponEntity.userLimit) {
-      couponEntity.isExpired = true;
-    }
-
-    await manager.save(couponEntity);
-    this.logger.log(`🎟️ Immediate Allocation: Incremented coupon ${couponEntity.code} usage metrics.`);
-
-    return { couponEntity, discount };
+    return { couponEntity: validatedCoupon, discount };
   }
 
   async allocateCoupon(couponId: string, manager: EntityManager): Promise<void> {
@@ -44,17 +48,16 @@ export class CouponAllocationService {
       lock: { mode: 'pessimistic_write' },
     });
 
-    if (!coupon) {
-      throw new HttpException('Coupon not found', HttpStatus.NOT_FOUND);
+    const validatedCoupon = this.couponValidationService.checkFound(coupon, couponId);
+    this.couponValidationService.ensureValid(validatedCoupon);
+
+    validatedCoupon.usedCount += 1;
+    if (validatedCoupon.usedCount >= validatedCoupon.maxUses) {
+      validatedCoupon.isExpired = true;
     }
 
-    coupon.usedCount += 1;
-    if (coupon.usedCount >= coupon.userLimit) {
-      coupon.isExpired = true;
-    }
-
-    await manager.save(coupon);
-    this.logger.log(`🎟️ Re-allocated coupon usage for ${coupon.code}`);
+    await manager.save(validatedCoupon);
+    this.logger.log(`🎟️ Re-allocated coupon usage for ${validatedCoupon.code}`);
   }
 
   async restoreCoupon(couponId: string, manager: EntityManager): Promise<void> {
@@ -68,7 +71,7 @@ export class CouponAllocationService {
     }
 
     coupon.usedCount = Math.max(0, (coupon.usedCount || 0) - 1);
-    if (coupon.usedCount < coupon.userLimit) {
+    if (coupon.usedCount < coupon.maxUses) {
       coupon.isExpired = false;
     }
 

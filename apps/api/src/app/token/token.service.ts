@@ -128,12 +128,4 @@ export class TokenService {
     return this.tokenLifecycleService.remove(id, this.tokenRepository);
   }
   // End remove
-
-  async findOneWithAccessKey(id: string): Promise<Token | null> {
-    return this.tokenRepository
-      .createQueryBuilder('token')
-      .where('token.id = :id', { id })
-      .addSelect('token.accessKey')
-      .getOne(); 
-  } 
 }

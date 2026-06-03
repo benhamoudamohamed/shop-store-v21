@@ -214,7 +214,7 @@ export class Seed {
             coupons.push({
                 code: finalCode,
                 discountPercentage: discount,
-                userLimit: faker.number.int({ min: 10, max: 150 }),
+                maxUses: faker.number.int({ min: 10, max: 150 }),
                 startDate: new Date(),
                 expirationDate: faker.date.soon({ days: 90 }),
                 isActive: true,
@@ -315,7 +315,7 @@ export class Seed {
                 // Only increment coupon usage count metrics if the order is an active state
                 if (isAllocatedState) {
                     couponEntity.usedCount += 1;
-                    if (couponEntity.usedCount >= couponEntity.userLimit) {
+                    if (couponEntity.usedCount >= couponEntity.maxUses) {
                         couponEntity.isExpired = true;
                     }
                     await this.entityManager.save(Coupon, couponEntity);

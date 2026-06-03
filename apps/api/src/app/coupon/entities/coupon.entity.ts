@@ -27,7 +27,7 @@ export class Coupon extends BaseEntity {
   usedCount: number;
 
   @Column({ type: 'int', default: 0 })
-  userLimit: number;
+  maxUses: number;
 
   @Column({ type: 'timestamp', nullable: true })
   startDate: Date;
@@ -53,7 +53,7 @@ export class Coupon extends BaseEntity {
     return (
       this.isActive &&
       !this.isExpired &&
-      this.usedCount < this.userLimit &&
+      this.usedCount < this.maxUses &&
       now >= (this.startDate || this.createdAt) &&
       now <= this.expirationDate
     );

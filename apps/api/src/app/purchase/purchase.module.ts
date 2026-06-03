@@ -18,6 +18,7 @@ import { InvoiceService } from '../invoice/invoice.service';
 import { PurchaseValidationService } from './purchase-validation.service';
 import { PurchaseItemService } from './purchase-item.service';
 import { CouponAllocationService } from './coupon-allocation.service';
+import { CouponValidationService } from '../coupon/coupon-validation.service';
 import { PurchaseStatusService } from './purchase-status.service';
 import { PurchaseCleanupService } from './purchase-cleanup.service';
 
@@ -32,6 +33,7 @@ import { PurchaseCleanupService } from './purchase-cleanup.service';
     PurchaseValidationService,
     PurchaseItemService,
     CouponAllocationService,
+    CouponValidationService,
     PurchaseStatusService,
     PurchaseCleanupService,
     InvoiceService,

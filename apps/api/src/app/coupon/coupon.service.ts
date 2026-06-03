@@ -1,9 +1,10 @@
-import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Coupon } from './entities/coupon.entity';
 import { CreateCouponDto, CreateCouponSchema, UpdateExpirationDto, UpdateExpirationSchema } from './dto/create-coupon.dto';
 import { Seed } from '../shared/seed/seed.class';
+import { CouponValidationService } from './coupon-validation.service';
 
 @Injectable()
 export class CouponService extends Seed {
@@ -13,9 +14,11 @@ export class CouponService extends Seed {
   constructor(
     entityManager: EntityManager,
     @InjectRepository(Coupon)
-    private couponRepository: Repository<Coupon>) { 
+    private couponRepository: Repository<Coupon>,
+    private couponValidationService: CouponValidationService,
+  ) { 
     super(entityManager)
-    // this.fakeIt(Coupon)
+    // this.fakeIt(Coupon) 
   } 
   
   // Start findAll
@@ -58,21 +61,14 @@ export class CouponService extends Seed {
 
   // Start findByCode
   async findByCode(code: string): Promise<Coupon> {
-    const normalizedCode = code.toUpperCase().trim();
+    const normalizedCode = this.couponValidationService.normalizeCode(code);
 
     const coupon = await this.couponRepository.findOne({ where: { code: normalizedCode } });
+    const validatedCoupon = this.couponValidationService.checkFound(coupon, normalizedCode);
+    this.couponValidationService.ensureValid(validatedCoupon);
 
-    if (!coupon) {
-      this.logger.warn(`🔍 Coupon Not Found or Expired for: ${normalizedCode}`);
-      throw new HttpException({status: HttpStatus.BAD_REQUEST, error: 'Coupon Not Found or Expired', }, HttpStatus.BAD_REQUEST);
-    } 
-    if (!coupon.isValid) {
-      this.logger.warn(`⏰ Coupon logic failed for: ${normalizedCode}`);
-      throw new BadRequestException({status: 400, error: "Coupon is either expired, inactive, or reached its limit"});
-    }
-
-    this.logger.log(`✅ Found valid coupon: ${normalizedCode} (${coupon.discountPercentage}%)`);
-    return coupon;
+    this.logger.log(`✅ Found valid coupon: ${normalizedCode} (${validatedCoupon.discountPercentage}%)`);
+    return validatedCoupon;
   }
   // End findByCode
 
@@ -90,27 +86,12 @@ export class CouponService extends Seed {
       throw new HttpException({statusCode: HttpStatus.BAD_REQUEST, message: 'Validation failed', errors: errors}, HttpStatus.BAD_REQUEST);
     }
 
-    // 1. Force Uppercase for consistency in the DB
-    const normalizedCode = createCouponDto.code.toUpperCase();
+    const createPayload = this.couponValidationService.prepareCreateCouponData(createCouponDto);
 
-    // 2. Check for duplicate entries in the database
-    const existing = await this.couponRepository.findOne({ where: { code: normalizedCode } });
+    const existing = await this.couponRepository.findOne({ where: { code: createPayload.code } });
+    this.couponValidationService.ensureUniqueCode(existing, createPayload.code);
 
-    if (existing) {
-      this.logger.warn(`🚫 Duplicate entry blocked: ${normalizedCode}`);
-      throw new ConflictException(`The coupon code "${normalizedCode}" already exists.`);
-    }
-
-    // 3. Create the entity instance
-    const newCoupon = this.couponRepository.create({
-      ...createCouponDto,
-      code: normalizedCode,
-      // Ensure numbers are handled correctly if they come in as strings
-      discountPercentage: Number(createCouponDto.discountPercentage),
-      userLimit: Number(createCouponDto.userLimit),
-      // If your DTO has isActive or startDate, they will be spread here
-      isActive: createCouponDto.isActive ?? true,
-    });
+    const newCoupon = this.couponRepository.create(createPayload);
 
     // 4. Save to database
     const savedCoupon = await this.couponRepository.save(newCoupon);
