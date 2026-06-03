@@ -43,18 +43,18 @@ export class ProductService extends Seed {
 
   // Start findbyId
   async findbyId(id: string): Promise<Product>  {
-    const category = await this.productRepository.findOne({ 
+    const product = await this.productRepository.findOne({ 
       where: { id }, 
       relations: ['image', 'category'] 
     }); 
 
-    if(!category) {
+    if(!product) {
       this.logger.error(`🟥 Product not found with id: ${id}`)
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Product Not Found', }, HttpStatus.NOT_FOUND);
     }
     
     this.logger.log(`🟩 findOne Product successfully with id: ${id}`);
-    return category;
+    return product;
   }
   // End findbyId
 
@@ -143,21 +143,14 @@ export class ProductService extends Seed {
     if (file) {
       product.image = await this.imageService.uploadAndReplace(product.image?.id, file);
     }
-    
-    const updateData = { ...data } as Partial<CreateProductDto> & { id?: string };
-    delete updateData.id;
-    
-    Object.assign(product, updateData);
-    product.category = category;
 
-    // Convert to Number to ensure math safety from string inputs
+    product.category = category;
     product.unitPrice = Number(data.unitPrice);
     product.tvaRate = Number(data.tva);
     product.isFavorite = data.isFavorite;
     product.isAvailable = data.isAvailable;
-    
-    // 3. Save the product
     Object.assign(product, data);
+
     const updatedProduct = await this.productRepository.save(product); 
 
     this.logger.log(`✅ Update product successfully ${product.name}`);
@@ -165,7 +158,7 @@ export class ProductService extends Seed {
     const { ...productData } = updatedProduct; 
     return {
       ...productData,
-      totalTTC: updatedProduct.totalTTC // Explicitly set the calculated value
+      totalTTC: updatedProduct.totalTTC
     };
   }
   // End update
