@@ -30,7 +30,8 @@ export class PurchaseController {
   }
 
   @Get(':id/invoice/pdf')
-  async downloadInvoicePdf(@Param('id') id: string, @Res() res: Response) {
+  @HttpCode(HttpStatus.OK)
+  async generateInvoicePdf(@Param('id') id: string, @Res() res: Response) {
     const invoiceId = await this.purchaseService.getInvoiceIdByPurchaseId(id);
     // Set headers for PDF
     res.set({
@@ -44,7 +45,7 @@ export class PurchaseController {
 
   @Get(':id/delivery-slip/pdf')
   @HttpCode(HttpStatus.OK)
-  async getPdf(@Param('id') id: string, @Res() res: Response) {
+  async generateDeliverySlipPdf(@Param('id') id: string, @Res() res: Response) {
     const invoiceId = await this.purchaseService.getInvoiceIdByPurchaseId(id); 
     // Set headers for PDF
     res.set({
@@ -56,20 +57,22 @@ export class PurchaseController {
     return res;
   }
 
- 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createPurchaseDto: CreatePurchaseDto) {
     return this.purchaseService.create(createPurchaseDto);
   }
 
   @UseGuards(AuthenticationGuard)
   @Put('/:id/status')
+  @HttpCode(HttpStatus.OK)
   updateStatus(@Param('id') id: string, @Body() status: UpdateStatusDto) {
     return this.purchaseService.updateStatus(id, status);
   }
 
   @UseGuards(AuthenticationGuard)
   @Delete('/:id')
+  @HttpCode(HttpStatus.OK)
   delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.purchaseService.delete(id);
   }  

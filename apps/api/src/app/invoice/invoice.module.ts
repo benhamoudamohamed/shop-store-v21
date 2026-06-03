@@ -9,12 +9,26 @@ import { PurchaseService } from '../purchase/purchase.service';
 import { PurchaseController } from '../purchase/purchase.controller';
 import { HelperService } from '../shared/helpers/helper.service';
 import { DeliverySlipService } from '../delivery-slip/delivery-slip.service';
+import { PurchaseValidationService } from '../purchase/purchase-validation.service';
+import { PurchaseItemService } from '../purchase/purchase-item.service';
+import { CouponAllocationService } from '../purchase/coupon-allocation.service';
+import { PurchaseStatusService } from '../purchase/purchase-status.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Invoice, Purchase, Token]),
   ],
   controllers: [PurchaseController],
-  providers: [InvoiceService, PurchaseService, DeliverySlipService, TokenService, HelperService],
+  providers: [
+    InvoiceService,
+    PurchaseService,
+    PurchaseValidationService,
+    PurchaseItemService,
+    CouponAllocationService,
+    PurchaseStatusService,
+    DeliverySlipService,
+    TokenService,
+    HelperService,
+  ],
 })
 export class InvoiceModule {}

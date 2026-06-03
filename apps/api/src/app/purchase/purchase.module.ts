@@ -13,6 +13,11 @@ import { HelperService } from '../shared/helpers/helper.service';
 import { TokenService } from '../token/token.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { InvoiceService } from '../invoice/invoice.service';
+import { PurchaseValidationService } from './purchase-validation.service';
+import { PurchaseItemService } from './purchase-item.service';
+import { CouponAllocationService } from './coupon-allocation.service';
+import { PurchaseStatusService } from './purchase-status.service';
+import { PurchaseCleanupService } from './purchase-cleanup.service';
 
 @Module({
   imports: [
@@ -20,6 +25,17 @@ import { InvoiceService } from '../invoice/invoice.service';
     ScheduleModule.forRoot(),
   ],
   controllers: [PurchaseController],
-  providers: [PurchaseService, InvoiceService, DeliverySlipService, TokenService, HelperService],
+  providers: [
+    PurchaseService,
+    PurchaseValidationService,
+    PurchaseItemService,
+    CouponAllocationService,
+    PurchaseStatusService,
+    PurchaseCleanupService,
+    InvoiceService,
+    DeliverySlipService,
+    TokenService,
+    HelperService,
+  ],
 }) 
 export class PurchaseModule {}
