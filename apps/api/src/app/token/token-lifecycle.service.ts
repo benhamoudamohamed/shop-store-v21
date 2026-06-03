@@ -7,6 +7,10 @@ import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { TokenType } from '@youssef-brand/shared/shared-types';
 import { TokenHashService } from './token-hash.service';
 
+/**
+ * Encapsulates token lifecycle operations such as creation, refresh, revocation,
+ * and cleanup within transactional boundaries.
+ */
 @Injectable()
 export class TokenLifecycleService {
   private logger = new Logger('🔄 TokenLifecycleService 🔄');
@@ -17,10 +21,17 @@ export class TokenLifecycleService {
     private tokenHashService: TokenHashService,
   ) {}
 
+  /**
+   * Resolve the repository to use either from a transaction manager or the default repository.
+   */
   private getRepository(repository: Repository<Token>, manager?: EntityManager): Repository<Token> {
     return manager ? manager.getRepository(Token) : repository;
   }
 
+  /**
+   * Create a new token record for a given user identity and role.
+   * Uses a transaction when no manager is supplied.
+   */
   async create(
     id: string,
     role: UserRole,
@@ -50,6 +61,10 @@ export class TokenLifecycleService {
     });
   }
 
+  /**
+   * Refresh an existing token pair by validating the current access key,
+   * issuing a new token, hashing the new credentials, and revoking the old token.
+   */
   async refreshToken(
     user: { id: string; email: string; fullName: string; userRole: string },
     tokenId: string,
@@ -95,6 +110,9 @@ export class TokenLifecycleService {
     return newToken;
   }
 
+  /**
+   * Revoke an active token by clearing credentials and marking it revoked.
+   */
   async revoke(
     id: string,
     repository: Repository<Token>,
@@ -131,6 +149,9 @@ export class TokenLifecycleService {
     });
   }
 
+  /**
+   * Return true when the token is revoked or no longer exists.
+   */
   async isTokenRevoked(id: string, repository: Repository<Token>): Promise<boolean> {
     const token = await repository.findOne({
       where: { id },
@@ -139,6 +160,9 @@ export class TokenLifecycleService {
     return !token || token.isRevoked === true;
   }
 
+  /**
+   * Delete all tokens that have already been revoked.
+   */
   async removeAllRevoked(repository: Repository<Token>): Promise<Token[]> {
     this.logger.log(`🟩🎉 Remove All revoked token Call`);
     const tokens = await repository.findBy({ isRevoked: true });
@@ -167,6 +191,10 @@ export class TokenLifecycleService {
     return new HttpException({ description: 'Token Deleted Successfully' }, HttpStatus.OK);
   }
 
+  /**
+   * Load a token record by id within the context of a transaction manager.
+   * Throws NOT_FOUND if the token cannot be retrieved.
+   */
   private async getTokenById(id: string, manager: EntityManager): Promise<Token> {
     const token = await manager.findOne(Token, { where: { id }, relations: ['owner', 'admin', 'moderator'] });
     if (!token) {

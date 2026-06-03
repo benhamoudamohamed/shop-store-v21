@@ -10,6 +10,9 @@ import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { CreateUserDto, UpdateUserDto, UpdateUserPasswordDto } from '@youssef-brand/shared/shared-dto';
 import { ResetPasswordType } from '@youssef-brand/shared/shared-types';
 
+/**
+ * Controller exposing moderator management routes for admin and moderator users.
+ */
 @Controller('moderator')
 export class ModeratorController {
   constructor(
@@ -17,6 +20,9 @@ export class ModeratorController {
     private readonly moderatorAccountService: ModeratorAccountService,
   ) {}
 
+  /**
+   * Admin-only endpoint returning all moderator users.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
   @Get('all')
@@ -25,6 +31,9 @@ export class ModeratorController {
     return this.moderatorService.findAllUsers();
   }
 
+  /**
+   * Admin-only endpoint returning paginated moderator users.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
   @Get('paginate')
@@ -33,6 +42,9 @@ export class ModeratorController {
     return this.moderatorService.findAllbyPagination(paginateQuery);
   }
 
+  /**
+   * Endpoint to get a single moderator by id.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN, UserRole.enum.MODERATOR)
   @Get(':id')
@@ -41,18 +53,27 @@ export class ModeratorController {
     return this.moderatorService.findbyId(id);
   }
 
+  /**
+   * Search moderators by full name using the posted body value.
+   */
   @Post('find/fullname')
   @HttpCode(HttpStatus.OK)
   findByName(@Body('fullName') fullName: string): Promise<Moderator> {
     return this.moderatorService.findByName(fullName);
   }
 
+  /**
+   * Search a moderator by email address.
+   */
   @Post('find/email')
   @HttpCode(HttpStatus.OK)
   findbyMail(@Body() user: Moderator): Promise<Moderator> {
     return this.moderatorService.findbyMail(user.email);
   }
 
+  /**
+   * Admin-only endpoint to create a new moderator account.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
   @Post('create')
@@ -61,6 +82,9 @@ export class ModeratorController {
     return this.moderatorService.create(data); 
   }
 
+  /**
+   * Moderator endpoint for updating their own display name.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.MODERATOR)
   @Put('edit/name/:id')
@@ -70,6 +94,9 @@ export class ModeratorController {
     return this.moderatorAccountService.editName(id, fullName);
   }
 
+  /**
+   * Admin-only endpoint to activate or deactivate a moderator user.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
   @Put('edit/status/:id') 
@@ -78,18 +105,27 @@ export class ModeratorController {
     return this.moderatorAccountService.toggleUserStatus(id, isActivated);
   }
 
+  /**
+   * Send a password reset verification code to the requested moderator email.
+   */
   @Post('sendVerificationCode')
   @HttpCode(HttpStatus.OK)
   sendVerificationCode(@Body() user: Moderator): Promise<{ message: string }> {
     return this.moderatorAccountService.sendVerificationCode(user.email);
   }
 
+  /**
+   * Verify a password reset code for a moderator.
+   */
   @Post('verifyCode')
   @HttpCode(HttpStatus.CREATED)
   verifyCode(@Body() data: ResetPasswordType): Promise<{ message: string }> {
     return this.moderatorAccountService.verifyCode(data);
   }
 
+  /**
+   * Update a moderator user's password after verification.
+   */
   @HttpCode(HttpStatus.OK)
   @Put('edit/password')
   updatePassword(@Body() data: UpdateUserPasswordDto): Promise<{ message: string }> {

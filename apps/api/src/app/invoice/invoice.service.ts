@@ -4,11 +4,19 @@ import PDFDocument from 'pdfkit';
 import { Invoice } from './entities/invoice.entity';
 import { Response } from 'express';
 
+/**
+ * Service responsible for generating invoice PDFs from persisted invoice entities.
+ */
 @Injectable()
 export class InvoiceService {
 
   constructor(private dataSource: DataSource) {}
 
+  /**
+   * Generate a commercial invoice PDF and stream it to the response.
+   * Loads the invoice with purchase/order item/product relations, renders headers,
+   * customer details, line items, and totals to a PDF document.
+   */
   async generateInvoicePdf(invoiceId: string, responseStream: Response): Promise<void> {
     // Fetch invoice along with purchase and nested order items
     const invoice = await this.dataSource.manager.findOne(Invoice, {

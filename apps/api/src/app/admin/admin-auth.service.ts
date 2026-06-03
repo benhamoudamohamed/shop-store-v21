@@ -27,7 +27,10 @@ export class AdminAuthService {
     private authHelperService: AuthHelperService,
     private transactionService: TransactionService) {}
 
-  // Start login 
+  /**
+   * Start login
+   * Authenticates an admin using credentials and returns a token pair.
+   */
   async login(data: AuthType): Promise<TokenType> {
     return this.transactionService.run(async (manager) => {
       const user = await manager.createQueryBuilder(Admin, 'user')
@@ -60,9 +63,11 @@ export class AdminAuthService {
       return { id: createdToken.id, key: tokens.key, value: tokens.value };
     });
   }
-  // End login 
 
-  // Start refresh token
+  /**
+   * Start refresh token
+   * Refreshes admin session tokens using the provided refresh key.
+   */
   async refreshTokens(userId: string, tokenId: string, accessKey: string): Promise<TokenType> {
     this.logger.log(`🟩🎉 refreshTokens Call`);
     return this.transactionService.run(async (manager) => {
@@ -75,9 +80,11 @@ export class AdminAuthService {
       return this.tokenService.refreshToken(user, tokenId, accessKey, UserRole.enum.ADMIN, expiresInRT, manager);
     });
   }
-  // end refresh token 
 
-  // start logout
+  /**
+   * Start logout
+   * Revokes an admin session token and ends the current session.
+   */
   async logout(userId: string, tokenId: string): Promise<{ message: string }> {
     this.logger.log(`🟩🎉 logout Call`);
     return this.transactionService.run(async (manager) => {
@@ -94,6 +101,5 @@ export class AdminAuthService {
       return { message: 'Your Session Is Ended' };
     });
   }
-  // end logout
 }
  

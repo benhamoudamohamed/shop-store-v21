@@ -2,6 +2,10 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 
+/**
+ * Guard that restricts route access to users with accepted roles.
+ * Reads authorized roles from route metadata and compares against the current user.
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
 

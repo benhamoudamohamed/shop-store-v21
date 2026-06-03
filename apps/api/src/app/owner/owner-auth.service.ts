@@ -11,6 +11,9 @@ import { Owner } from './entities/owner.entity';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { AuthType, TokenType } from '@youssef-brand/shared/shared-types';
 
+/**
+ * Service handling owner authentication and token lifecycle.
+ */
 @Injectable()
 export class OwnerAuthService {
 
@@ -28,7 +31,9 @@ export class OwnerAuthService {
     private transactionService: TransactionService,
     ) {}
 
-  // Start login 
+  /**
+   * Authenticate owner credentials and return a new token pair.
+   */
   async login(data: AuthType): Promise<TokenType> {
     return this.transactionService.run(async (manager) => {
       const user = await manager.createQueryBuilder(Owner, 'user')
@@ -61,9 +66,10 @@ export class OwnerAuthService {
       return { id: createdToken.id, key: tokens.key, value: tokens.value };
     });
   }
-  // End login 
 
-  // Start refresh token
+  /**
+   * Refresh the owner's session token pair using refresh token credentials.
+   */
   async refreshTokens(userId: string, tokenId: string, accessKey: string): Promise<TokenType> {
     this.logger.log(`🟩🎉 refreshTokens Call`);
     return this.transactionService.run(async (manager) => {
@@ -76,9 +82,10 @@ export class OwnerAuthService {
       return this.tokenService.refreshToken(user, tokenId, accessKey, UserRole.enum.OWNER, expiresInRT, manager);
     });
   }
-  // end refresh token 
 
-  // start logout
+  /**
+   * Logout the owner by revoking the active refresh token.
+   */
   async logout(userId: string, tokenId: string): Promise<{ message: string }> {
     this.logger.log(`🟩🎉 logout Call`);
     return this.transactionService.run(async (manager) => {
@@ -95,6 +102,5 @@ export class OwnerAuthService {
       return { message: 'Your Session Is Ended' };
     });
   }
-  // end logout
 }
  

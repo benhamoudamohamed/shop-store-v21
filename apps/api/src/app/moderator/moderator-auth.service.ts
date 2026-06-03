@@ -12,6 +12,9 @@ import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { TransactionService } from '../shared/helpers/transaction.service';
 import { AuthHelperService } from '../shared/helpers/auth-helper.service';
 
+/**
+ * Service handling moderator authentication, token lifecycle, and session actions.
+ */
 @Injectable()
 export class ModeratorAuthService {
 
@@ -28,7 +31,9 @@ export class ModeratorAuthService {
     private authHelperService: AuthHelperService,
     private transactionService: TransactionService) {}
 
-  // Start login 
+  /**
+   * Validate moderator credentials, create tokens, and return token pair.
+   */
   async login(data: AuthType): Promise<TokenType> {
     return this.transactionService.run(async (manager) => {
       const user = await manager.createQueryBuilder(Moderator, 'moderator')
@@ -64,9 +69,10 @@ export class ModeratorAuthService {
       return { id: createdToken.id, key: tokens.key, value: tokens.value };
     });
   }
-  // End login 
 
-  // Start refresh token
+  /**
+   * Refresh an existing moderator token pair using the provided access key.
+   */
   async refreshTokens(userId: string, tokenId: string, accessKey: string): Promise<TokenType> {
     this.logger.log(`🟩🎉 refreshTokens Call`);
     return this.transactionService.run(async (manager) => {
@@ -79,9 +85,10 @@ export class ModeratorAuthService {
       return this.tokenService.refreshToken(user, tokenId, accessKey, UserRole.enum.MODERATOR, expiresInRT, manager);
     });
   }
-  // end refresh token 
 
-  // start logout
+  /**
+   * Logout a moderator by revoking the associated token.
+   */
   async logout(userId: string, tokenId: string): Promise<{ message: string }> {
     this.logger.log(`🟩🎉 logout Call`);
     return this.transactionService.run(async (manager) => {
@@ -98,6 +105,5 @@ export class ModeratorAuthService {
       return { message: 'Your Session Is Ended' };
     });
   }
-  // end logout
 }
  

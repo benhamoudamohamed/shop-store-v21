@@ -21,19 +21,20 @@ export class CouponService extends Seed {
     // this.fakeIt(Coupon) 
   } 
   
-  // Start findAll
-  async findAll(): Promise<{ data: Partial<Coupon> & { isValid: boolean }[]; count: number }> {    
-    
+  /**
+   * Return all coupons, including a computed validity flag.
+   */
+  async findAll(): Promise<{ data: Partial<Coupon> & { isValid: boolean }[]; count: number }> {
     const [coupons, count] = await this.couponRepository
-    .createQueryBuilder("coupon")
-    .orderBy('coupon.createdAt', 'DESC')
-    .getManyAndCount()
+      .createQueryBuilder('coupon')
+      .orderBy('coupon.createdAt', 'DESC')
+      .getManyAndCount();
 
     const dataWithValidity = coupons.map(coupon => {
-      const { ...couponData } = coupon; 
+      const { ...couponData } = coupon;
       return {
         ...couponData,
-        isValid: coupon.isValid
+        isValid: coupon.isValid,
       };
     });
 
@@ -43,23 +44,28 @@ export class CouponService extends Seed {
       data: dataWithValidity,
     };
   }
-  // End findAll
 
-  // Start findbyId
-  async findbyId(id: string): Promise<Coupon>  {
-    const coupon = await this.couponRepository.findOne({ where: { id } }); 
+  /**
+   * Load a coupon by id and throw 404 if not found.
+   */
+  async findbyId(id: string): Promise<Coupon> {
+    const coupon = await this.couponRepository.findOne({ where: { id } });
 
-    if(!coupon) {
-      this.logger.error(`🟥 Coupon not found with id: ${id}`)
-      throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Coupon Not Found', }, HttpStatus.NOT_FOUND);
+    if (!coupon) {
+      this.logger.error(`🟥 Coupon not found with id: ${id}`);
+      throw new HttpException(
+        { status: HttpStatus.NOT_FOUND, error: 'Coupon Not Found' },
+        HttpStatus.NOT_FOUND,
+      );
     }
-    
+
     this.logger.log(`🟩 findOne Coupon successfully with id: ${id}`);
     return coupon;
   }
-  // End findbyId
 
-  // Start findByCode
+  /**
+   * Find a coupon by code, normalize the value, and verify it is active.
+   */
   async findByCode(code: string): Promise<Coupon> {
     const normalizedCode = this.couponValidationService.normalizeCode(code);
 
@@ -70,9 +76,10 @@ export class CouponService extends Seed {
     this.logger.log(`✅ Found valid coupon: ${normalizedCode} (${validatedCoupon.discountPercentage}%)`);
     return validatedCoupon;
   }
-  // End findByCode
 
-  // Start create
+  /**
+   * Validate coupon payload, ensure uniqueness, and persist the new coupon.
+   */
   async create(createCouponDto: CreateCouponDto): Promise<Coupon> {
     this.logger.log(` 🔍 Attempting to create coupon: ${createCouponDto.code}`);
 
@@ -80,10 +87,13 @@ export class CouponService extends Seed {
     if (!result.success) {
       const errors = result.error.issues.map(e => ({
         field: e.path.join('.'),
-        message: e.message
-      }))
-      this.logger.warn(`🚫 Validation failed for coupon: ${createCouponDto.code}. Errors: ${JSON.stringify(errors)}`)
-      throw new HttpException({statusCode: HttpStatus.BAD_REQUEST, message: 'Validation failed', errors: errors}, HttpStatus.BAD_REQUEST);
+        message: e.message,
+      }));
+      this.logger.warn(`🚫 Validation failed for coupon: ${createCouponDto.code}. Errors: ${JSON.stringify(errors)}`);
+      throw new HttpException(
+        { statusCode: HttpStatus.BAD_REQUEST, message: 'Validation failed', errors: errors },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const createPayload = this.couponValidationService.prepareCreateCouponData(createCouponDto);
@@ -93,15 +103,15 @@ export class CouponService extends Seed {
 
     const newCoupon = this.couponRepository.create(createPayload);
 
-    // 4. Save to database
     const savedCoupon = await this.couponRepository.save(newCoupon);
     this.logger.log(`✅ Coupon ${savedCoupon.code} created successfully.`);
 
     return savedCoupon;
   }
-  // End create
 
-   // Start change expiration status
+  /**
+   * Update the coupon's expiration and active flags after validating payload.
+   */
   async updateStatus(couponId: string, data: UpdateExpirationDto): Promise<Coupon> {
     this.logger.log(`🔍 Attempting to update expiration status for coupon: ${couponId}`);
 
@@ -112,7 +122,7 @@ export class CouponService extends Seed {
         message: issue.message,
       }));
       this.logger.warn(`🚫 Invalid expiration payload for coupon ${couponId}: ${JSON.stringify(errors)}`);
-      throw new BadRequestException({statusCode: HttpStatus.BAD_REQUEST, message: 'Validation failed', errors});    
+      throw new BadRequestException({ statusCode: HttpStatus.BAD_REQUEST, message: 'Validation failed', errors });
     }
 
     const { isExpired, isActive } = result.data;
@@ -130,20 +140,23 @@ export class CouponService extends Seed {
 
     return updatedCoupon;
   }
-  // End change expiration status
 
-  // Start delete
+  /**
+   * Delete a coupon by id and return a confirmation message.
+   */
   async delete(id: string): Promise<{ message: string }> {
     const coupon = await this.couponRepository.findOne({ where: { id } });
 
-    if(!coupon) {
-      this.logger.error(`🟥 Coupon not found with id: ${id}`)
-      throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Coupon Not Found', }, HttpStatus.NOT_FOUND);
-    }   
+    if (!coupon) {
+      this.logger.error(`🟥 Coupon not found with id: ${id}`);
+      throw new HttpException(
+        { status: HttpStatus.NOT_FOUND, error: 'Coupon Not Found' },
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-    await this.couponRepository.delete(coupon.id)
+    await this.couponRepository.delete(coupon.id);
     this.logger.log(`🗑️ Coupon Deleted successfully`);
     return { message: 'Coupon Deleted Successfully' };
   }
-  // End delete
 }

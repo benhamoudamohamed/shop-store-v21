@@ -9,6 +9,11 @@ export class CouponAllocationService {
 
   constructor(private couponValidationService: CouponValidationService) {} 
 
+  /**
+   * Start applyCoupon
+   * Validates and applies a coupon code to the current cart total,
+   * returning the coupon entity and computed discount value.
+   */
   async applyCoupon(
     couponCode: string | undefined,
     totalHT: number,
@@ -42,6 +47,11 @@ export class CouponAllocationService {
     return { couponEntity: validatedCoupon, discount };
   }
 
+  /**
+   * Start allocateCoupon
+   * Reserves an already validated coupon by incrementing its usage count
+   * during a purchase status transition.
+   */
   async allocateCoupon(couponId: string, manager: EntityManager): Promise<void> {
     const coupon = await manager.findOne(Coupon, {
       where: { id: couponId },
@@ -60,6 +70,11 @@ export class CouponAllocationService {
     this.logger.log(`🎟️ Re-allocated coupon usage for ${validatedCoupon.code}`);
   }
 
+  /**
+   * Start restoreCoupon
+   * Rolls back coupon usage when a purchase is cancelled or reverted,
+   * ensuring the coupon becomes available again if applicable.
+   */
   async restoreCoupon(couponId: string, manager: EntityManager): Promise<void> {
     const coupon = await manager.findOne(Coupon, {
       where: { id: couponId },

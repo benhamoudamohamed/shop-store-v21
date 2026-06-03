@@ -6,6 +6,9 @@ import { Owner } from './entities/owner.entity';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { UpdateUserPasswordDto } from '@youssef-brand/shared/shared-dto';
 
+/**
+ * Service for owner account management, lookup, and password operations.
+ */
 @Injectable()
 export class OwnerService {
   private logger = new Logger('👑 Owner Service 👑')
@@ -18,7 +21,9 @@ export class OwnerService {
     // this.createUniqueOwner()
   }
 
-  // Start findAllUsers
+  /**
+   * Return all owner users with active token relations.
+   */
   async findAllUsers(): Promise<{ data: Owner[]; count: number }> {    
     const [users, count] = await this.ownerRepository
     .createQueryBuilder("user")
@@ -32,9 +37,10 @@ export class OwnerService {
       count: count,
     };
   }
-  // End findAllUsers
 
-  // Start findbyId
+  /**
+   * Load a single owner by id and throw 404 if not found.
+   */
   async findbyId(id: string): Promise<Owner>  {
     const user = await this.ownerRepository.findOne({where: {id}});
     if(!user) {
@@ -45,9 +51,10 @@ export class OwnerService {
     this.logger.log(`🟩 findOne owner successfully with id: ${id}`);
     return user;
   }
-  // End findbyId
 
-  // Start create
+  /**
+   * Create a unique owner account if none exists in the system.
+   */
   async createUniqueOwner(): Promise<Owner> {
     const existingOwner = await this.ownerRepository.findOne({
       where: { userRole: UserRole.enum.OWNER }
@@ -68,9 +75,10 @@ export class OwnerService {
     this.logger.log(`✅ Owner created successfully}`);
     return savedOwner;
   }
-  // End create
   
-  // Start updatePassword
+  /**
+   * Update the owner's password using a supplied email match.
+   */
   async updatePassword(data: UpdateUserPasswordDto):  Promise<Owner> {
 
     const { email, password } = data;

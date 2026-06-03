@@ -18,7 +18,10 @@ export class AdminService {
     // this.createUniqueAdmin()
   }
 
-  // Start findAllUsers
+  /**
+   * Start findAllUsers
+   * Returns all admin users with their associated tokens and a total count.
+   */
   async findAllUsers(): Promise<{ data: Admin[]; count: number }> {    
     const [users, count] = await this.adminRepository
     .createQueryBuilder("user")
@@ -32,9 +35,11 @@ export class AdminService {
       count: count,
     };
   }
-  // End findAllUsers 
 
-  // Start findbyId
+  /**
+   * Start findbyId
+   * Retrieves a single admin user by ID and throws if not found.
+   */
   async findbyId(id: string): Promise<Admin>  {
     const user = await this.adminRepository.findOne({where: {id}});
     if(!user) {
@@ -45,9 +50,11 @@ export class AdminService {
     this.logger.log(`🟩 findOne admin successfully with id: ${id}`);
     return user;
   }
-  // End findbyId
 
-  // Start create
+  /**
+   * Start createUniqueAdmin
+   * Creates the first admin account if none exists, enforcing a single-admin policy.
+   */
   async createUniqueAdmin(): Promise<Admin> {
     const existingAdmin = await this.adminRepository.findOne({
       where: { userRole: UserRole.enum.ADMIN }
@@ -69,9 +76,11 @@ export class AdminService {
     this.logger.log(`✅ Admin created successfully}`);
     return savedAdmin;
   }
-  // End create
   
-  // Start updatePassword
+  /**
+   * Start updatePassword
+   * Updates an admin's password after validating the email address exists.
+   */
   async updatePassword(data: UpdateUserPasswordDto):  Promise<Admin> {
 
     const { email, password } = data;

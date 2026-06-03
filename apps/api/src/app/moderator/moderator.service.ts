@@ -13,6 +13,9 @@ import { Seed } from '../shared/seed/seed.class';
 import { CreateUserDto } from '@youssef-brand/shared/shared-dto';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 
+/**
+ * Service that manages moderator user accounts, searching, creation, and deletion.
+ */
 @Injectable()
 export class ModeratorService extends Seed {
 
@@ -30,7 +33,9 @@ export class ModeratorService extends Seed {
     // this.fakeIt(Moderator) 
   } 
  
-  // Start findAllUsers
+  /**
+   * Return all moderator users including active token relations.
+   */
   async findAllUsers(): Promise<{ data: Moderator[]; count: number }> {    
     
     const [users, count] = await this.moderatorRepository
@@ -45,9 +50,10 @@ export class ModeratorService extends Seed {
       data: users,
     };
   }
-  // End findAllUsers
 
-  //  Start findAllbyPagination
+  /**
+   * Return paginated moderator users with search and sort support.
+   */
   async findAllbyPagination(paginateQuery: PaginateQuery): Promise<Paginated<Moderator>> {
     const queryBuilder = this.moderatorRepository
       .createQueryBuilder("moderator")
@@ -64,9 +70,10 @@ export class ModeratorService extends Seed {
     this.logger.log(`🟩 findAll By Pagination successfully`);
     return await paginate<Moderator>(paginateQuery, queryBuilder, config)
   }
-  // End findAllbyPagination
 
-  // Start findbyId
+  /**
+   * Load a single moderator user by id and throw 404 when absent.
+   */
   async findbyId(id: string): Promise<Moderator>  {
     const user = await this.moderatorRepository.findOne({where: {id}});
     if(!user) {
@@ -77,9 +84,10 @@ export class ModeratorService extends Seed {
     this.logger.log(`🟩 findOne user successfully with id: ${id}`);
     return user;
   }
-  // End findbyId
 
-  // Start findByName
+  /**
+   * Find a moderator user by full name using a case-insensitive match.
+   */
   async findByName(fullName: string): Promise<Moderator>  {
     const user = await this.moderatorRepository.findOne({where: { fullName: ILike(`${fullName}`)}});
 
@@ -91,9 +99,10 @@ export class ModeratorService extends Seed {
     this.logger.log(`🟩 findByName user successfully with: ${fullName}`);
     return user;
   }
-  // End findByName
 
-  // Start findbyMail
+  /**
+   * Load a moderator user by email and raise not found if missing.
+   */
   async findbyMail(email: string): Promise<Moderator>  {
     const user = await this.moderatorRepository.findOne({where: {email}});
     if(!user) {
@@ -104,9 +113,10 @@ export class ModeratorService extends Seed {
     this.logger.log(`🟩 findbyMail user successfully with email: ${email}`);
     return user;
   }
-  // End findbyMail
 
-  // Start create
+  /**
+   * Create a new moderator account, hash the password, and notify via email.
+   */
   async create(data: CreateUserDto): Promise<Moderator> {
     return await this.transactionService.run(async (manager) => {
       const { fullName, email, password } = data;
@@ -139,9 +149,10 @@ export class ModeratorService extends Seed {
       return user;
     });
   }
-  // End create
 
-  // Start delete
+  /**
+   * Delete a moderator user by id and return a confirmation message.
+   */
   async delete(id: string): Promise<{ message: string }> {
     const user = await this.findbyId(id)
     
@@ -149,5 +160,4 @@ export class ModeratorService extends Seed {
     this.logger.log(`🟩 delete user successfully with email: ${user.email}`);
     return { message: 'User Deleted Successfully' };
   }
-  // End delete
 }

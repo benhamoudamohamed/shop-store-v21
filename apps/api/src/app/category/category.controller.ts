@@ -10,18 +10,27 @@ import { multerOptions } from '../../../config/multer-config';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
   
+  /**
+   * Public endpoint returning all categories with images and product counts.
+   */
   @Get('/all')
   @HttpCode(HttpStatus.OK)
-  findAll(): Promise<{ data: Category[]; count: number }> {  
+  findAll(): Promise<{ data: Category[]; count: number }> {
     return this.categoryService.findAll();
   }
 
+  /**
+   * Public endpoint returning a single category by id.
+   */
   @Get('/:id')
   @HttpCode(HttpStatus.OK)
   findbyId(@Param('id') id: string): Promise<Category> {
     return this.categoryService.findbyId(id);
   }
 
+  /**
+   * Protected endpoint for creating a category with an uploaded image.
+   */
   @UseGuards(AuthenticationGuard)
   @UseInterceptors(FileInterceptor('file', multerOptions))
   @Post()
@@ -30,6 +39,9 @@ export class CategoryController {
     return this.categoryService.create(data, file);
   }
 
+  /**
+   * Protected endpoint for updating category data and optionally replacing the category image.
+   */
   @UseGuards(AuthenticationGuard)
   @UseInterceptors(FileInterceptor('file', multerOptions))
   @Put(':id')
@@ -41,9 +53,13 @@ export class CategoryController {
     return this.categoryService.update(id, data, file);
   }
 
+  /**
+   * Protected endpoint for deleting a category and its associated image assets.
+   */
   @UseGuards(AuthenticationGuard)
   @Delete('/:id')
   delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.categoryService.delete(id);
-  }  
+  }
+
 }

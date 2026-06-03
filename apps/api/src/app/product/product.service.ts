@@ -8,6 +8,9 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { ImageService } from '../image/image.service';
 import { Seed } from '../shared/seed/seed.class';
 
+/**
+ * Service responsible for product CRUD operations, image handling, and category association.
+ */
 @Injectable()
 export class ProductService extends Seed {
 
@@ -24,7 +27,9 @@ export class ProductService extends Seed {
     // this.fakeIt(Product) 
   }
 
-  // Start findAll
+  /**
+   * Retrieve all products including image relations and publish count metadata.
+   */
   async findAll(): Promise<{ data: Product[]; count: number }> {    
     
     const [products, count] = await this.productRepository
@@ -39,9 +44,11 @@ export class ProductService extends Seed {
       data: products,
     };
   }
-  // End findAll
 
-  // Start findbyId
+  /**
+   * Load a single product by id with its image and category relations.
+   * Throws a 404 error when the product does not exist.
+   */
   async findbyId(id: string): Promise<Product>  {
     const product = await this.productRepository.findOne({ 
       where: { id }, 
@@ -56,9 +63,10 @@ export class ProductService extends Seed {
     this.logger.log(`🟩 findOne Product successfully with id: ${id}`);
     return product;
   }
-  // End findbyId
 
-  // Start findByFavorite
+  /**
+   * Return products filtered by favorite flag along with count metadata.
+   */
   async findByFavorite(isFavorite: boolean): Promise<{ data: Product[]; count: number }> {
     if (isFavorite === undefined || isFavorite === null) {
       this.logger.error(`🟥 Product Param not found: ${isFavorite}`)
@@ -79,9 +87,11 @@ export class ProductService extends Seed {
       data: products,
     };
   }
-  // End findByFavorite
 
-  // start create
+  /**
+   * Create a new product, attach the uploaded image, and associate it with a category.
+   * Also generates a category-based product code and computes the final total price.
+   */
   async create(data: CreateProductDto, file: Express.Multer.File, catID: string): Promise<Partial<Product> & { totalTTC: number }> {
     const category = await this.categoryRepository.findOne({where: {id: catID}});
     if(!category) {
@@ -122,9 +132,10 @@ export class ProductService extends Seed {
       totalTTC: savedProduct.totalTTC // Explicitly set the calculated value
     };
   }
-  // End create
 
-  // start update
+  /**
+   * Update an existing product, optionally replace its image, and refresh category links.
+   */
   async update(id: string, catID: string, data: CreateProductDto, file?: Express.Multer.File): Promise<Partial<Product> & { totalTTC: number }> {
     const product = await this.productRepository.findOne({ 
       where: { id }, 
@@ -161,9 +172,10 @@ export class ProductService extends Seed {
       totalTTC: updatedProduct.totalTTC
     };
   }
-  // End update
 
-  // Start delete
+  /**
+   * Delete a product and clean up its associated image asset.
+   */
   async delete(id: string): Promise<{ message: string }> {
     const product = await this.findbyId(id)
     const oldImageId = product.image?.id;
@@ -174,6 +186,5 @@ export class ProductService extends Seed {
     this.logger.log(`🗑️ delete produc successfully`);
     return { message: 'Product Deleted Successfully' };
   }
-  // End delete
 }
 

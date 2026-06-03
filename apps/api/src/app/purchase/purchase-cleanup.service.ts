@@ -9,11 +9,14 @@ import { PurchaseStatus } from '@youssef-brand/shared/shared-enums';
 export class PurchaseCleanupService {
   protected logger = new Logger('⏰ PurchaseCleanupService ⏰');
 
-  constructor(
-    private readonly dataSource: DataSource,
-    private readonly purchaseService: PurchaseService,
-  ) {}
+  constructor(private readonly dataSource: DataSource,
+    private readonly purchaseService: PurchaseService) {}
 
+  /**
+   * Start handleAbandonedCODOrders
+   * Executes nightly cleanup for stale COD purchases that remained pending
+   * longer than the configured cutoff period.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleAbandonedCODOrders(): Promise<void> {
     this.logger.log('⏰ Running midnight cleanup for stale COD orders...');

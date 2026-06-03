@@ -4,6 +4,10 @@ import { jwtVerify } from 'jose';
 import { TokenService } from '../../token/token.service';
 import { CustomJosePayload } from './jose-payload';
 
+/**
+ * Guard that validates JWT bearer tokens and attaches the current user payload to requests.
+ * Rejects requests with missing, malformed, revoked, or expired tokens.
+ */
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
 
@@ -11,6 +15,9 @@ export class AuthenticationGuard implements CanActivate {
 
   constructor(private configService: ConfigService, private tokenService: TokenService) {}
 
+  /**
+   * Validate the bearer token and populate request.user with the decoded payload.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
@@ -37,7 +44,10 @@ export class AuthenticationGuard implements CanActivate {
     return true;
   }
 
-async validateToken(auth: string) {
+  /**
+   * Decode and verify the JWT payload from the Authorization header.
+   */
+  async validateToken(auth: string) {
     const [type, token] = auth.split(' ');
 
     if (type !== 'Bearer' || !token) {

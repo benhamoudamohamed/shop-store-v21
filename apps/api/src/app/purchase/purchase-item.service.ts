@@ -8,6 +8,11 @@ import { CreatePurchaseDto } from './dto/create-purchase.dto';
 export class PurchaseItemService {
   protected logger = new Logger('💳 PurchaseItemService 💳');
 
+  /**
+   * Start processProductItems
+   * Validates each requested product item, reserves stock, computes line totals,
+   * and returns prepared order item entities for checkout.
+   */
   async processProductItems(
     productItems: CreatePurchaseDto['productItems'],
     manager: EntityManager,

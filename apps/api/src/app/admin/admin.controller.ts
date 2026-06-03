@@ -11,6 +11,10 @@ import { UpdateUserPasswordDto } from '@youssef-brand/shared/shared-dto';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  /**
+   * Start findAllUsers
+   * Returns all admin users to authorized admin/owner roles.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
   @Get('all')
@@ -19,6 +23,10 @@ export class AdminController {
     return this.adminService.findAllUsers();
   }
 
+  /**
+   * Start findbyId
+   * Retrieves admin details by ID for authorized admin users.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.ADMIN)
   @Get(':id')
@@ -27,6 +35,10 @@ export class AdminController {
     return this.adminService.findbyId(id);
   }
 
+  /**
+   * Start updatePassword
+   * Updates the password for the authenticated admin user.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.ADMIN)
   @HttpCode(HttpStatus.OK)

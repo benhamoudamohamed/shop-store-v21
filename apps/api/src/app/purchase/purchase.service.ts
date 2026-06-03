@@ -93,7 +93,8 @@ export class PurchaseService extends Seed {
 
   /**
    * Start getInvoiceIdByPurchaseId
-   * Fetches the invoice ID associated with a specific purchase ID.
+   * Fetches and returns the invoice identifier linked to a given purchase.
+   * Uses a lightweight DB projection to only retrieve the purchase and invoice IDs.
   */
   async getInvoiceIdByPurchaseId(id: string): Promise<string> {
     const purchase = await this.purchaseRepository.findOne({
@@ -114,7 +115,8 @@ export class PurchaseService extends Seed {
 
   /**
    * Start create
-   * Handles the entire checkout process:
+   * Handles the full checkout workflow, validates payload, builds order items,
+   * applies a coupon, computes totals, and persists the purchase record.
   */
   async create(createPurchaseDto: CreatePurchaseDto): Promise<Purchase> {
     this.purchaseValidationService.validatePurchasePayload(createPurchaseDto);
@@ -160,8 +162,8 @@ export class PurchaseService extends Seed {
 
   /**
    * Start updateStatus
-   * Handles status updates with safe stock and coupon adjustments.
-   * Implements two main scenarios:
+   * Processes state transitions for a purchase, applying stock and coupon logic
+   * through the dedicated PurchaseStatusService.
   */
   async updateStatus(purchaseId: string, updateStatusDto: UpdateStatusDto): Promise<Purchase> {
     return await this.transactionService.run(async (manager) => {
@@ -178,7 +180,7 @@ export class PurchaseService extends Seed {
 
   /**
    * Start delete
-   * Deletes a purchase and all its related order items.
+   * Removes a purchase record and cascades deletion to its related order items.
   */
   async delete(id: string): Promise<{ message: string }> {
     const purchase = await this.purchaseRepository.findOne({ 

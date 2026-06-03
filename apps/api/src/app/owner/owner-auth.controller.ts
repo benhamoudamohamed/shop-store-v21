@@ -7,16 +7,25 @@ import { AuthenticationGuard } from '../shared/auth/auth.guard';
 import { AuthType, TokenType } from '@youssef-brand/shared/shared-types';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 
+/**
+ * Controller exposing owner authentication routes.
+ */
 @Controller('owner')
 export class OwnerAuthController {
   constructor(private readonly ownerAuthService: OwnerAuthService) {}
 
+  /**
+   * Login endpoint for owner authentication.
+   */
   @HttpCode(HttpStatus.OK)
   @Post('login')
   login(@Body() data: AuthType): Promise<TokenType>  {
     return this.ownerAuthService.login(data);
   }
 
+  /**
+   * Refresh the owner's active token pair.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER)
   @HttpCode(HttpStatus.OK)
@@ -25,6 +34,9 @@ export class OwnerAuthController {
     return this.ownerAuthService.refreshTokens(userId, tokenId, data.key);
   }
 
+  /**
+   * Logout endpoint to revoke the owner's refresh token.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER)
   @HttpCode(HttpStatus.OK)

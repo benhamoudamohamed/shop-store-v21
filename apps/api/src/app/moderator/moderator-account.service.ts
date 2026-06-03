@@ -11,6 +11,9 @@ import { TransactionService } from '../shared/helpers/transaction.service';
 import { UpdateUserPasswordDto } from '@youssef-brand/shared/shared-dto';
 import { ResetPasswordType } from '@youssef-brand/shared/shared-types';
 
+/**
+ * Service that provides account management operations for moderator users.
+ */
 @Injectable()
 export class ModeratorAccountService {
   private logger = new Logger('👤 Moderator Account Service 👤')
@@ -25,6 +28,9 @@ export class ModeratorAccountService {
     private readonly transactionService: TransactionService,
   ) {}
 
+  /**
+   * Update the moderator's full name by id.
+   */
   async editName(id: string, fullName: string): Promise<Moderator> {
     const user = await this.moderatorRepository.findOne({ where: { id } });
     if (!user) {
@@ -40,6 +46,9 @@ export class ModeratorAccountService {
     return await this.moderatorRepository.findOneOrFail({ where: { id } });
   }
 
+  /**
+   * Activate or deactivate a moderator account.
+   */
   async toggleUserStatus(id: string, status: boolean): Promise<Moderator> {
     const user = await this.moderatorRepository.findOne({ where: { id } });
     if (!user) {
@@ -56,6 +65,9 @@ export class ModeratorAccountService {
     return await this.moderatorRepository.findOneOrFail({ where: { id } });
   }
 
+  /**
+   * Generate and email a password reset verification code to a moderator.
+   */
   async sendVerificationCode(email: string): Promise<{ message: string }> {
     const user = await this.dataSource.manager.findOne(Moderator, { where: { email } });
 
@@ -95,6 +107,9 @@ export class ModeratorAccountService {
     throw new HttpException({ status: HttpStatus.NOT_ACCEPTABLE, error: 'Email Not Activated' }, HttpStatus.NOT_ACCEPTABLE);
   }
 
+  /**
+   * Verify a reset password code provided by a moderator.
+   */
   async verifyCode(data: ResetPasswordType): Promise<{ message: string }> {
     const { email, code } = data;
     const user = await this.moderatorRepository
@@ -127,6 +142,9 @@ export class ModeratorAccountService {
     throw new HttpException({ status: HttpStatus.NOT_ACCEPTABLE, error: 'Email Not Activated' }, HttpStatus.NOT_ACCEPTABLE);
   }
 
+  /**
+   * Update a moderator password and send a change notification email.
+   */
   async updatePassword(data: UpdateUserPasswordDto): Promise<{ message: string }> {
     const { email, password } = data;
 

@@ -12,11 +12,14 @@ import { DocumentNumberService } from '../shared/helpers/document-number.service
 export class PurchaseStatusService {
   protected logger = new Logger('🔄 PurchaseStatusService 🔄');
 
-  constructor(
-    private couponAllocationService: CouponAllocationService,
-    private documentNumberService: DocumentNumberService,
-  ) {}
+  constructor(private couponAllocationService: CouponAllocationService,
+    private documentNumberService: DocumentNumberService) {}
 
+  /**
+   * Start applyStatusTransition
+   * Applies a purchase status change, coordinating stock, coupon, invoice,
+   * and delivery slip behavior in a transactional manner.
+   */
   async applyStatusTransition(
     purchase: Purchase,
     newStatus: PurchaseStatus,
@@ -53,6 +56,11 @@ export class PurchaseStatusService {
     return updatedPurchase;
   }
 
+  /**
+   * Start allocateStockAndCoupon
+   * Deducts inventory and reserves coupon usage when a purchase transitions
+   * into an allocated state.
+   */
   private async allocateStockAndCoupon(purchase: Purchase, manager: EntityManager): Promise<void> {
     for (const item of purchase.orderItems) {
       const product = await manager.findOne(Product, {
@@ -77,6 +85,11 @@ export class PurchaseStatusService {
     }
   }
 
+  /**
+   * Start restoreStockAndCoupon
+   * Returns inventory and releases coupon allocation when a purchase is rolled back
+   * from an allocated state.
+   */
   private async restoreStockAndCoupon(purchase: Purchase, manager: EntityManager): Promise<void> {
     for (const item of purchase.orderItems) {
       await manager.increment(Product, { id: item.product.id }, 'stock', item.quantity);
@@ -88,6 +101,14 @@ export class PurchaseStatusService {
     }
   }
 
+  /**
+   * Start handleInvoiceGeneration
+   * Creates a legal invoice record for a delivered purchase if one does not already exist.
+   */
+  /**
+   * Start handleInvoiceGeneration
+   * Creates a legal invoice record for a delivered purchase if one does not already exist.
+   */
   private async handleInvoiceGeneration(purchase: Purchase, manager: EntityManager): Promise<void> {
     if (purchase.invoice) return;
 
@@ -106,6 +127,10 @@ export class PurchaseStatusService {
     this.logger.log(`🧾 Legal Invoice generated: ${invoiceNumber} for finalized COD tracking.`);
   }
 
+  /**
+   * Start handleDeliverySlipGeneration
+   * Generates a delivery slip for a confirmed purchase if one is not already present.
+   */
   private async handleDeliverySlipGeneration(purchase: Purchase, manager: EntityManager): Promise<void> {
     if (purchase.deliverySlip) return;
 

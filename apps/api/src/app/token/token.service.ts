@@ -7,6 +7,10 @@ import { TokenHashService } from './token-hash.service';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { TokenType } from '@youssef-brand/shared/shared-types';
 
+/**
+ * Service responsible for token record management.
+ * Handles retrieval, creation, refresh, revocation, hash updates, and cleanup.
+ */
 @Injectable()
 export class TokenService {
   private logger = new Logger('🔑 Token Service 🔑')
@@ -18,7 +22,10 @@ export class TokenService {
     private tokenHashService: TokenHashService,
   ) {}
 
-  // Start findAll
+  /**
+   * Return all tokens grouped by their user role.
+   * Includes owner/admin/moderator relations for each token.
+   */
   async findAll() {
     const count = await this.tokenRepository
       .createQueryBuilder("token")
@@ -54,9 +61,11 @@ export class TokenService {
       data: groupedByRole
     };
   }
-  // End FindAll
 
-  // Start findbyId
+  /**
+   * Load a single token by id with related owner/admin/moderator.
+   * Throws NOT_FOUND if the token does not exist.
+   */
   async findbyId(id: string, manager?: EntityManager): Promise<Token>  {
     const token = manager
       ? await manager.findOne(Token, { where: { id }, relations: ['owner', 'admin', 'moderator'] })
@@ -70,21 +79,24 @@ export class TokenService {
     this.logger.log(`🟩🎉 findbyId successfully with id: ${id}`);
     return token;
   }
-  // End findbyId
 
-  // Start create
+  /**
+   * Create a new token entry tied to the indicated user role.
+   */
   async create(id: string, role: UserRole, manager?: EntityManager): Promise<Token> {
     return this.tokenLifecycleService.create(id, role, this.tokenRepository, manager);
   }
-  // End create
 
-  // Start updateHashes
+  /**
+   * Persist fresh access token and access key hashes for an existing token record.
+   */
   async updateHashes(tokenId: string, data: TokenType, manager?: EntityManager): Promise<Token> {
     return this.tokenHashService.updateHashes(tokenId, data, this.tokenRepository, manager);
   }
-  // End updateHashes
 
-  // Start refreshToken
+  /**
+   * Refresh an existing token pair and revoke the old one.
+   */
   async refreshToken(
     user: { id: string; email: string; fullName: string; userRole: string },
     tokenId: string,
@@ -103,29 +115,32 @@ export class TokenService {
       manager,
     );
   }
-  // End refreshToken
 
-  // Start revoke
+  /**
+   * Revoke a token by marking it revoked and clearing sensitive values.
+   */
   async revoke(id: string, manager?: EntityManager): Promise<Token> {
     return this.tokenLifecycleService.revoke(id, this.tokenRepository, manager);
   }
-  // End revoke
 
-  // Start isTokenRevoked
+  /**
+   * Returns true when the token has already been revoked or does not exist.
+   */
   async isTokenRevoked(id: string): Promise<boolean> {
     return this.tokenLifecycleService.isTokenRevoked(id, this.tokenRepository);
   }
-  // End isTokenRevoked
 
-  // Start removeAllRevoked
+  /**
+   * Delete all tokens that have been revoked and return the removed records.
+   */
   async removeAllRevoked() {
     return this.tokenLifecycleService.removeAllRevoked(this.tokenRepository);
   }
-  // End removeAllRevoked
 
-  // Start remove
+  /**
+   * Permanently delete a token record from storage.
+   */
   async remove(id: string): Promise<HttpException> {
     return this.tokenLifecycleService.remove(id, this.tokenRepository);
   }
-  // End remove
 }

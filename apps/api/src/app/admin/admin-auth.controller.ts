@@ -11,12 +11,20 @@ import { AuthType, TokenType } from '@youssef-brand/shared/shared-types';
 export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
+  /**
+   * Start login
+   * Authenticates an admin and returns a token pair.
+   */
   @HttpCode(HttpStatus.OK)
   @Post('login')
   login(@Body() data: AuthType): Promise<TokenType>  {
     return this.adminAuthService.login(data);
   }
 
+  /**
+   * Start refreshTokens
+   * Refreshes the current admin session tokens using a refresh token.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -25,6 +33,10 @@ export class AdminAuthController {
     return this.adminAuthService.refreshTokens(userId, tokenId, data.key);
   }
 
+  /**
+   * Start logout
+   * Logs out the admin by revoking the current refresh token.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.ADMIN)
   @HttpCode(HttpStatus.OK)

@@ -4,10 +4,17 @@ import PDFDocument from 'pdfkit';
 import { DeliverySlip } from './entities/delivery-slip.entity';
 import { Response } from 'express';
 
+/**
+ * Service responsible for generating delivery slip PDFs from persisted delivery slip entities.
+ */
 @Injectable()
 export class DeliverySlipService {
   constructor(private dataSource: DataSource) {}
 
+  /**
+   * Generate a Delivery Slip PDF and stream it into the HTTP response.
+   * Loads the delivery slip with purchase/order item/product relations and renders the document.
+   */
   async generateDeliverySlipPdf(slipId: string, responseStream: Response): Promise<void> {
     const slip = await this.dataSource.manager.findOne(DeliverySlip, {
       where: { id: slipId },

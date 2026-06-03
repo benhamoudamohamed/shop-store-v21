@@ -3,6 +3,11 @@ import { CreatePurchaseDto, CreatePurchaseSchema } from './dto/create-purchase.d
 
 @Injectable()
 export class PurchaseValidationService {
+  /**
+   * Start validatePurchasePayload
+   * Validates the incoming purchase DTO against the Zod schema and throws
+   * a BadRequestException when validation fails.
+   */
   validatePurchasePayload(dto: CreatePurchaseDto): void {
     const validation = CreatePurchaseSchema.safeParse(dto);
     if (!validation.success) {

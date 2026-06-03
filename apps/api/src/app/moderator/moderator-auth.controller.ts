@@ -7,16 +7,25 @@ import { ModeratorAuthService } from './moderator-auth.service';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { AuthType, TokenType } from '@youssef-brand/shared/shared-types';
 
+/**
+ * Controller for moderator authentication endpoints.
+ */
 @Controller('moderator')
 export class ModeratorAuthController {
   constructor(private readonly moderatorAuthService: ModeratorAuthService) {}
 
+  /**
+   * Login endpoint returning a moderator token pair.
+   */
   @HttpCode(HttpStatus.OK)
   @Post('login')
   login(@Body() data: AuthType): Promise<TokenType>  {
     return this.moderatorAuthService.login(data);
   }
 
+  /**
+   * Refresh the moderator access token using the current refresh token.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.MODERATOR)
   @HttpCode(HttpStatus.OK)
@@ -25,6 +34,9 @@ export class ModeratorAuthController {
     return this.moderatorAuthService.refreshTokens(userId, tokenId, data.key);
   }
 
+  /**
+   * End the moderator session and revoke the refresh token.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.MODERATOR)
   @HttpCode(HttpStatus.OK)

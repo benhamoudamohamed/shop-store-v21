@@ -6,6 +6,9 @@ import sharp from 'sharp';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
+/**
+ * Service responsible for image persistence, thumbnail generation, and cleanup.
+ */
 @Injectable()
 export class ImageService {
   
@@ -13,6 +16,9 @@ export class ImageService {
 
   constructor(@InjectRepository(Image) private readonly imageRepository: Repository<Image>) {}
 
+  /**
+   * Upload a new image, generate a thumbnail, and save metadata to the database.
+   */
   async upload(file: Express.Multer.File): Promise<Image> {
     this.logger.log(`📤 upload call`);
 
@@ -35,12 +41,18 @@ export class ImageService {
     return await this.imageRepository.save(newImage);
   }
 
+  /**
+   * Upload an image and replace an existing image if one exists.
+   */
   async uploadAndReplace(oldImageId: string | undefined, file: Express.Multer.File): Promise<Image> {
     const newImage = await this.upload(file);
     await this.deleteImage(oldImageId);
     return newImage;
   }
 
+  /**
+   * Delete the image files from disk and remove the database record.
+   */
   async deleteImage(imageId?: string) {
     if (!imageId) {
       this.logger.log(`🗑️ deleteImage skipped because no image id was provided`);

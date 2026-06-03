@@ -7,10 +7,16 @@ import { RolesDecorator } from '../shared/auth/roles.decorator';
 import { UserRole } from '@youssef-brand/shared/shared-enums';
 import { UpdateUserPasswordDto } from '@youssef-brand/shared/shared-dto';
 
+/**
+ * Controller exposing owner-only user management routes.
+ */
 @Controller('owner')
 export class OwnerController {
   constructor(private readonly ownerService: OwnerService) {}
   
+  /**
+   * Owner-only endpoint to read all owner users.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER)
   @Get('all')
@@ -19,6 +25,9 @@ export class OwnerController {
     return this.ownerService.findAllUsers();
   }
 
+  /**
+   * Owner-only endpoint to return a specific owner by id.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER)
   @Get(':id')
@@ -27,6 +36,9 @@ export class OwnerController {
     return this.ownerService.findbyId(id);
   }
 
+  /**
+   * Owner-only endpoint to update the owner password.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER)
   @HttpCode(HttpStatus.OK)

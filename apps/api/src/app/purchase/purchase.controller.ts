@@ -15,6 +15,10 @@ export class PurchaseController {
     private readonly deliverySlipService: DeliverySlipService,
     private readonly invoiceService: InvoiceService) {}
 
+  /**
+   * Start findAll
+   * Returns a list of purchases, optionally filtered by status, along with a summary breakdown.
+   */
   @UseGuards(AuthenticationGuard)
   @Get('/all')
   @HttpCode(HttpStatus.OK)
@@ -22,6 +26,10 @@ export class PurchaseController {
     return this.purchaseService.findAll(status);
   }
 
+  /**
+   * Start findbyId
+   * Fetches a single purchase by ID with all related details.
+   */
   @UseGuards(AuthenticationGuard)
   @Get('/:id')
   @HttpCode(HttpStatus.OK)
@@ -29,6 +37,10 @@ export class PurchaseController {
     return this.purchaseService.findbyId(id);
   }
 
+  /**
+   * Start generateInvoicePdf
+   * Streams the PDF invoice for a purchase to the client.
+   */
   @Get(':id/invoice/pdf')
   @HttpCode(HttpStatus.OK)
   async generateInvoicePdf(@Param('id') id: string, @Res() res: Response) {
@@ -43,6 +55,10 @@ export class PurchaseController {
     return res;
   }
 
+  /**
+   * Start generateDeliverySlipPdf
+   * Streams the delivery slip PDF for a purchase to the client.
+   */
   @Get(':id/delivery-slip/pdf')
   @HttpCode(HttpStatus.OK)
   async generateDeliverySlipPdf(@Param('id') id: string, @Res() res: Response) {
@@ -57,12 +73,20 @@ export class PurchaseController {
     return res;
   }
 
+  /**
+   * Start create
+   * Creates a new purchase order from the checkout payload.
+   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createPurchaseDto: CreatePurchaseDto) {
     return this.purchaseService.create(createPurchaseDto);
   }
 
+  /**
+   * Start updateStatus
+   * Updates the status of an existing purchase.
+   */
   @UseGuards(AuthenticationGuard)
   @Put('/:id/status')
   @HttpCode(HttpStatus.OK)
@@ -70,6 +94,10 @@ export class PurchaseController {
     return this.purchaseService.updateStatus(id, status);
   }
 
+  /**
+   * Start delete
+   * Deletes a purchase record by ID.
+   */
   @UseGuards(AuthenticationGuard)
   @Delete('/:id')
   @HttpCode(HttpStatus.OK)

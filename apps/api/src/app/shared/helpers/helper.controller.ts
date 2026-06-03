@@ -6,9 +6,15 @@ import { RolesDecorator } from "../auth/roles.decorator";
 import { User } from "@youssef-brand/shared/shared-types";
 import { UserRole } from "@youssef-brand/shared/shared-enums";
 
+/**
+ * Controller exposing lightweight helper endpoints for authenticated users.
+ */
 @Controller('helper')
 export class HelperController {
 
+  /**
+   * Return the current authenticated user information.
+   */
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN, UserRole.enum.MODERATOR)
   @Get('/whoami')

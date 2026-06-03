@@ -8,33 +8,48 @@ import { AuthenticationGuard } from '../shared/auth/auth.guard';
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
+  /**
+   * Protected endpoint returning all coupons and their calculated validity.
+   */
   @UseGuards(AuthenticationGuard)
   @Get('/all')
   @HttpCode(HttpStatus.OK)
-  async getAll(): Promise<{ data: Partial<Coupon> & { isValid: boolean }[]; count: number }> {  
+  async getAll(): Promise<{ data: Partial<Coupon> & { isValid: boolean }[]; count: number }> {
     return await this.couponService.findAll();
   }
 
+  /**
+   * Protected endpoint returning a single coupon by id.
+   */
   @UseGuards(AuthenticationGuard)
   @Get('/:id')
   @HttpCode(HttpStatus.OK)
-  async findbyId(@Param('id') id: string): Promise<Coupon> {  
+  async findbyId(@Param('id') id: string): Promise<Coupon> {
     return await this.couponService.findbyId(id);
   }
 
+  /**
+   * Public endpoint for validating a coupon code and returning its details.
+   */
   @Get('/code/:code')
   @HttpCode(HttpStatus.OK)
   async findByCode(@Param('code') code: string): Promise<Coupon> {
     return await this.couponService.findByCode(code);
   }
- 
+
+  /**
+   * Protected endpoint for creating a new coupon.
+   */
   @UseGuards(AuthenticationGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() data: CreateCouponDto): Promise<Coupon> {
     return await this.couponService.create(data);
   }
- 
+
+  /**
+   * Protected endpoint for updating coupon expiration and active state.
+   */
   @UseGuards(AuthenticationGuard)
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
@@ -42,9 +57,13 @@ export class CouponController {
     return await this.couponService.updateStatus(id, data);
   }
 
+  /**
+   * Protected endpoint for deleting a coupon by id.
+   */
   @UseGuards(AuthenticationGuard)
   @Delete('/:id')
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     return await this.couponService.delete(id);
-  }  
+  }
+
 }
