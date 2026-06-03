@@ -4,6 +4,7 @@ import { Moderator } from './entities/moderator.entity';
 import { Token } from '../token/entities/token.entity';
 import { ModeratorService } from './moderator.service';
 import { ModeratorAuthService } from './moderator-auth.service';
+import { ModeratorAccountService } from './moderator-account.service';
 import { ModeratorController } from './moderator.controller';
 import { ModeratorAuthController } from './moderator-auth.controller';
 import { TokenService } from '../token/token.service';
@@ -17,6 +18,6 @@ import { MailService } from '../shared/email/sendEmail';
     TypeOrmModule.forFeature([Moderator, Token]),
   ],
   controllers: [ModeratorController, ModeratorAuthController],
-  providers: [ModeratorService, ModeratorAuthService, TokenService, TokenLifecycleService, TokenHashService, HelperService, MailService],
+  providers: [ModeratorService, ModeratorAuthService, ModeratorAccountService, TokenService, TokenLifecycleService, TokenHashService, HelperService, MailService],
 })
 export class ModeratorModule {}

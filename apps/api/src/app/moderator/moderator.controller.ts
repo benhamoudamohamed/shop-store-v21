@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Delete, HttpCode, HttpStatus, Put, 
 import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { Moderator } from './entities/moderator.entity';
 import { ModeratorService } from './moderator.service';
+import { ModeratorAccountService } from './moderator-account.service';
 import { AuthenticationGuard } from '../shared/auth/auth.guard';
 import { RolesDecorator } from '../shared/auth/roles.decorator';
 import { RolesGuard } from '../shared/auth/roles.guard';
@@ -11,7 +12,10 @@ import { ResetPasswordType } from '@youssef-brand/shared/shared-types';
 
 @Controller('moderator')
 export class ModeratorController {
-  constructor(private readonly moderatorService: ModeratorService) {}
+  constructor(
+    private readonly moderatorService: ModeratorService,
+    private readonly moderatorAccountService: ModeratorAccountService,
+  ) {}
 
   @UseGuards(AuthenticationGuard, RolesGuard)
   @RolesDecorator(UserRole.enum.OWNER, UserRole.enum.ADMIN)
@@ -63,7 +67,7 @@ export class ModeratorController {
   @HttpCode(HttpStatus.CREATED)
   editName(@Param('id') id: string, @Body() data: UpdateUserDto): Promise<Moderator> {
     const { fullName } = data;
-    return this.moderatorService.editName(id, fullName);
+    return this.moderatorAccountService.editName(id, fullName);
   }
 
   @UseGuards(AuthenticationGuard, RolesGuard)
@@ -71,25 +75,25 @@ export class ModeratorController {
   @Put('edit/status/:id') 
   @HttpCode(HttpStatus.CREATED)
   toggleUserStatus(@Param('id') id: string, @Body('isActivated', ParseBoolPipe) isActivated: boolean): Promise<Moderator> {
-    return this.moderatorService.toggleUserStatus(id, isActivated);
+    return this.moderatorAccountService.toggleUserStatus(id, isActivated);
   }
 
   @Post('sendVerificationCode')
   @HttpCode(HttpStatus.OK)
   sendVerificationCode(@Body() user: Moderator): Promise<{ message: string }> {
-    return this.moderatorService.sendVerificationCode(user.email);
+    return this.moderatorAccountService.sendVerificationCode(user.email);
   }
 
   @Post('verifyCode')
   @HttpCode(HttpStatus.CREATED)
   verifyCode(@Body() data: ResetPasswordType): Promise<{ message: string }> {
-    return this.moderatorService.verifyCode(data);
+    return this.moderatorAccountService.verifyCode(data);
   }
 
   @HttpCode(HttpStatus.OK)
   @Put('edit/password')
   updatePassword(@Body() data: UpdateUserPasswordDto): Promise<{ message: string }> {
-    return this.moderatorService.updatePassword(data);
+    return this.moderatorAccountService.updatePassword(data);
   }
 
   @UseGuards(AuthenticationGuard, RolesGuard)
