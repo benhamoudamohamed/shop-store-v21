@@ -11,6 +11,8 @@ import { PurchaseController } from './purchase.controller';
 import { DeliverySlipService } from '../delivery-slip/delivery-slip.service';
 import { HelperService } from '../shared/helpers/helper.service';
 import { TokenService } from '../token/token.service';
+import { TokenLifecycleService } from '../token/token-lifecycle.service';
+import { TokenHashService } from '../token/token-hash.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { InvoiceService } from '../invoice/invoice.service';
 import { PurchaseValidationService } from './purchase-validation.service';
@@ -35,6 +37,8 @@ import { PurchaseCleanupService } from './purchase-cleanup.service';
     InvoiceService,
     DeliverySlipService,
     TokenService,
+    TokenLifecycleService,
+    TokenHashService,
     HelperService,
   ],
 }) 

@@ -5,6 +5,8 @@ import { Purchase } from '../purchase/entities/purchase.entity';
 import { Token } from '../token/entities/token.entity';
 import { InvoiceService } from './invoice.service';
 import { TokenService } from '../token/token.service';
+import { TokenLifecycleService } from '../token/token-lifecycle.service';
+import { TokenHashService } from '../token/token-hash.service';
 import { PurchaseService } from '../purchase/purchase.service';
 import { PurchaseController } from '../purchase/purchase.controller';
 import { HelperService } from '../shared/helpers/helper.service';
@@ -28,6 +30,8 @@ import { PurchaseStatusService } from '../purchase/purchase-status.service';
     PurchaseStatusService,
     DeliverySlipService,
     TokenService,
+    TokenLifecycleService,
+    TokenHashService,
     HelperService,
   ],
 })

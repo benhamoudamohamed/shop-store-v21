@@ -7,6 +7,8 @@ import { AdminAuthController } from './admin-auth.controller';
 import { HelperService } from '../shared/helpers/helper.service';
 import { MailService } from '../shared/email/sendEmail';
 import { TokenService } from '../token/token.service';
+import { TokenLifecycleService } from '../token/token-lifecycle.service';
+import { TokenHashService } from '../token/token-hash.service';
 import { Admin } from './entities/admin.entity';
 import { Token } from '../token/entities/token.entity';
 
@@ -15,7 +17,7 @@ import { Token } from '../token/entities/token.entity';
     TypeOrmModule.forFeature([Admin, Token]),
   ],
   controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminAuthService, TokenService, HelperService, MailService],
+  providers: [AdminService, AdminAuthService, TokenService, TokenLifecycleService, TokenHashService, HelperService, MailService],
 })
 export class AdminModule {}
 
