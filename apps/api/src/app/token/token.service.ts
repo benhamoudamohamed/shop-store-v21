@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { HelperService } from '../shared/helpers/helper.service';
 import { AuthHelperService } from '../shared/helpers/auth-helper.service';
 import { TransactionService } from '../shared/helpers/transaction.service';
@@ -19,8 +18,7 @@ export class TokenService {
     private dataSource: DataSource,
     private helperService: HelperService,
     private authHelperService: AuthHelperService,
-    private transactionService: TransactionService,
-    private exceptionHelper: ExceptionHelperService) {}
+    private transactionService: TransactionService) {}
 
   // Start findAll
   async findAll() {

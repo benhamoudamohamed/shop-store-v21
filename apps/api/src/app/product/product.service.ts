@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { customAlphabet } from 'nanoid';
 import { Product } from './entities/product.entity';
 import { Category } from '../category/entities/category.entity';
@@ -20,8 +19,7 @@ export class ProductService extends Seed {
     private productRepository: Repository<Product>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    private readonly imageService: ImageService,
-    private readonly exceptionHelper: ExceptionHelperService) { 
+    private readonly imageService: ImageService) { 
     super(entityManager)
     // this.fakeIt(Product) 
   }
@@ -143,14 +141,7 @@ export class ProductService extends Seed {
     }
 
     if (file) {
-      const oldImageId = product.image?.id;
-
-      const newImageEntity = await this.imageService.upload(file);
-      product.image = newImageEntity;
-      
-      if (oldImageId) {
-        await this.imageService.deleteImage(oldImageId);
-      }
+      product.image = await this.imageService.uploadAndReplace(product.image?.id, file);
     }
     
     const updateData = { ...data } as Partial<CreateProductDto> & { id?: string };

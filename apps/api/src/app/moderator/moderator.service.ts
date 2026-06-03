@@ -8,7 +8,6 @@ import { PaginateQuery, Paginated, PaginateConfig, paginate } from 'nestjs-pagin
 import { Order } from 'nestjs-paginate/lib/helper';
 import { GLOBAL_PAGINATION_CONFIG } from '../../main';
 import { Moderator } from './entities/moderator.entity';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { HelperService } from '../shared/helpers/helper.service';
 import { MailService } from '../shared/email/sendEmail';
 import { TransactionService } from '../shared/helpers/transaction.service';
@@ -30,10 +29,9 @@ export class ModeratorService extends Seed {
     private configService: ConfigService,
     private helperService: HelperService,
     private mailService: MailService,
-    private transactionService: TransactionService,
-    private exceptionHelper: ExceptionHelperService) {
-      super(entityManager)
-      // this.fakeIt(Moderator) 
+    private transactionService: TransactionService) {
+    super(entityManager)
+    // this.fakeIt(Moderator) 
   } 
  
   // Start findAllUsers

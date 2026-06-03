@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { Category } from './entities/category.entity';
 import { Product } from '../product/entities/product.entity';
 import { ImageService } from '../image/image.service';
@@ -19,8 +18,7 @@ export class CategoryService extends Seed {
     private categoryRepository: Repository<Category>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
-    private readonly imageService: ImageService,
-    private readonly exceptionHelper: ExceptionHelperService) { 
+    private readonly imageService: ImageService) { 
     super(entityManager)
     // this.fakeIt(Category)
   }
@@ -82,18 +80,11 @@ export class CategoryService extends Seed {
     }
 
     if (file) {
-      const oldImageId = category.image?.id;
-
-      const newImageEntity = await this.imageService.upload(file);
-      category.image = newImageEntity;
-      
-      if (oldImageId) {
-        await this.imageService.deleteImage(oldImageId);
-      }
+      category.image = await this.imageService.uploadAndReplace(category.image?.id, file);
     }
     
-    const updateData = { ...data };
-    delete (updateData as any).id;
+    const updateData: Record<string, unknown> = { ...data };
+    delete updateData.id;
     Object.assign(category, updateData);
 
     this.logger.log(`✅ Update Category successfully: ${category.name}`);

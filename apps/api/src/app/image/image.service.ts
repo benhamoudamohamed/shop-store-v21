@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { Image } from './entities/image.entity';
 import sharp from 'sharp';
 import { promises as fs } from 'fs';
@@ -12,10 +11,7 @@ export class ImageService {
   
   private logger = new Logger('🖼️ ImageService 🖼️')
 
-  constructor(
-    @InjectRepository(Image) private readonly imageRepository: Repository<Image>,
-    private readonly exceptionHelper: ExceptionHelperService,
-  ) {}
+  constructor(@InjectRepository(Image) private readonly imageRepository: Repository<Image>) {}
 
   async upload(file: Express.Multer.File): Promise<Image> {
     this.logger.log(`📤 upload call`);
@@ -39,7 +35,18 @@ export class ImageService {
     return await this.imageRepository.save(newImage);
   }
 
-  async deleteImage(imageId: string) {
+  async uploadAndReplace(oldImageId: string | undefined, file: Express.Multer.File): Promise<Image> {
+    const newImage = await this.upload(file);
+    await this.deleteImage(oldImageId);
+    return newImage;
+  }
+
+  async deleteImage(imageId?: string) {
+    if (!imageId) {
+      this.logger.log(`🗑️ deleteImage skipped because no image id was provided`);
+      return;
+    }
+
     this.logger.log(`🗑️ deleteImage call`);
     const image = await this.imageRepository.findOne({ where: { id: imageId } });
     if (!image) {

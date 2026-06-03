@@ -14,7 +14,6 @@ import { Seed } from '../shared/seed/seed.class';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { DeliverySlip } from '../delivery-slip/entities/delivery-slip.entity';
 import { TransactionService } from '../shared/helpers/transaction.service';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { DocumentNumberService } from '../shared/helpers/document-number.service';
 
 @Injectable()
@@ -28,8 +27,7 @@ export class PurchaseService extends Seed {
     private purchaseRepository: Repository<Purchase>,
     private dataSource: DataSource,
     private transactionService: TransactionService,
-    private documentNumberService: DocumentNumberService,
-    private exceptionHelper: ExceptionHelperService) {
+    private documentNumberService: DocumentNumberService) {
     super(entityManager)
     // this.fakeIt(Purchase)
   }
@@ -478,8 +476,6 @@ export class PurchaseService extends Seed {
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
     try {
-      // Find all purchases created more than 5 days ago that are still PENDING
-      // Note: adjust 'this.purchaseRepository' to match how you inject your repository
       const stalePurchases = await this.dataSource.manager.find(Purchase, {
         where: {
           status: PurchaseStatus.enum.PENDING,
@@ -488,12 +484,12 @@ export class PurchaseService extends Seed {
       });
 
       for (const purchase of stalePurchases) {
-        // Reuse your safe meta-state logic to cancel and restore stock/coupons automatically
         await this.updateStatus(purchase.id, { status: PurchaseStatus.enum.CANCELLED });
         this.logger.log(`🗑️ Automatically cancelled stagnant order ${purchase.id} due to inactivity.`);
       }
     } catch (error) {
       this.logger.error(`❌ Stale orders cleanup failed: ${error}`);
+      throw error;
     }
   }
 }

@@ -1,7 +1,6 @@
 import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { ExceptionHelperService } from '../shared/helpers/exception-helper.service';
 import { Coupon } from './entities/coupon.entity';
 import { CreateCouponDto, CreateCouponSchema, UpdateExpirationDto, UpdateExpirationSchema } from './dto/create-coupon.dto';
 import { Seed } from '../shared/seed/seed.class';
@@ -14,8 +13,7 @@ export class CouponService extends Seed {
   constructor(
     entityManager: EntityManager,
     @InjectRepository(Coupon)
-    private couponRepository: Repository<Coupon>,
-    private exceptionHelper: ExceptionHelperService) { 
+    private couponRepository: Repository<Coupon>) { 
     super(entityManager)
     // this.fakeIt(Coupon)
   } 
