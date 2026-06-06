@@ -36,8 +36,8 @@ const ENV = process.env.NODE_ENV;
       useClass: DatabaseConfig,
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client'),
-      exclude: ['/api*path']
+      rootPath: join(__dirname, '../../../../dist/apps/client/browser'),
+      exclude: ['/api*']
     }),
     SharedModule,
     OwnerModule,

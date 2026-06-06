@@ -5,6 +5,6 @@ import { resolve } from 'path';
 @Injectable()
 export class FrontendMiddleware implements NestMiddleware {
   use(req: Request, res: Response) {
-    res.sendFile(resolve('../../../../../dist/apps/client/index.html'));
+    res.sendFile(resolve(__dirname, '../../../../../../dist/apps/client/browser/index.html'));
   }
 }

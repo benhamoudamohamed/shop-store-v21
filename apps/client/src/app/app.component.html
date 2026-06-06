@@ -31,5 +31,20 @@
       </div>
     </div>
 
+    <section class="mt-10">
+      <h2 class="text-2xl font-bold text-slate-900 mb-4">Categories loaded from backend</h2>
+
+      <div *ngIf="loadingCategories" class="text-slate-500 mb-4">Loading categories...</div>
+      <div *ngIf="categoryError" class="text-red-600 mb-4">{{ categoryError }}</div>
+
+      <div class="grid gap-4">
+        <div *ngFor="let category of categories" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+          <div class="font-semibold text-slate-900 text-lg">{{ category.name }}</div>
+          <p class="text-sm text-slate-500 mt-2">{{ category.description }}</p>
+          <p class="text-xs text-slate-400 mt-3">ID: {{ category.id }}</p>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>

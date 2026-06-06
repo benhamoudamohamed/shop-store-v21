@@ -13,6 +13,10 @@ export const GLOBAL_PAGINATION_CONFIG: PaginateConfig<any> = {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: 'http://localhost:4200',
+    credentials: true,
+  });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const mode = process.env.NODE_ENV;
