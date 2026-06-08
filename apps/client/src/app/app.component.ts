@@ -5,6 +5,11 @@ import { RouterModule } from '@angular/router';
 import { Button } from 'primeng/button';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { RippleModule } from 'primeng/ripple';
+import { FormsModule } from '@angular/forms';
 
 interface Category {
   id: string;
@@ -14,7 +19,8 @@ interface Category {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule, Button, HttpClientModule],
+  imports: [CommonModule, RouterModule, Button, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RippleModule, HttpClientModule],
+
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -24,6 +30,8 @@ export class AppComponent implements OnInit {
   categories: Category[] = [];
   categoryError?: string;
   loadingCategories = true;
+
+
 
   constructor(private readonly http: HttpClient) {}
 
