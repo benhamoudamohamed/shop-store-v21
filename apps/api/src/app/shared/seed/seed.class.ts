@@ -1,6 +1,6 @@
 import { Logger } from "@nestjs/common";
 import { DeepPartial, EntityManager, EntityTarget, ObjectLiteral } from "typeorm";
-import { faker } from '@faker-js/faker';
+const { faker } = require('@faker-js/faker');
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Moderator } from "../../moderator/entities/moderator.entity";
@@ -68,8 +68,23 @@ export class Seed {
         );
         const usedCategoryNames = new Set<string>();
 
+        const categoryImageIds = [
+            'photo-1541701494587-cb58502866ab', // Abstract colorful waves
+            'photo-1507525428034-b723cf961d3e', // Clean minimal aesthetic
+            'photo-1513542789411-b6a5d4f31634', // Geometric pattern
+            'photo-1441986300917-64674bd600d8', // Clothing store boutique interior
+            'photo-1528459801416-a9e53bbf4e17', // Marble abstract texture
+            'photo-1506157786151-b8491531f063', // Fashion fabric texture
+            'photo-1532453288672-3a27e9be9efd', // Organized retail racks
+            'photo-1618005182384-a83a8bd57fbe', // Modern 3D digital art shape
+            'photo-1485125639709-a60c3a500bf1', // Minimalist apparel items
+            'photo-1550684848-fac1c5b4e853'  // Dark sleek gradient geometric
+        ];
+        // Shuffle the categories photo IDs array pool
+        const shuffledCategoryIds = [...categoryImageIds].sort(() => 0.5 - Math.random());
+
         return await Promise.all(
-            Array.from({ length: 10 }).map<Promise<Partial<Category>>>(async () => {
+            Array.from({ length: 10 }).map<Promise<Partial<Category>>>(async (_, index) => {
                 let name: string;
                 do {
                     name = `${faker.commerce.productName()} ${faker.string.alphanumeric(4)}`;
@@ -84,14 +99,23 @@ export class Seed {
                 await this.createUploadFile(originalFilename, 1024);
                 await this.createUploadFile(thumbnailFilename, 512);
 
+                // Select a guaranteed live ID from the pool safely using index fallback modulus
+                const photoId = shuffledCategoryIds[index % shuffledCategoryIds.length];
+
+                // Build bulletproof production CDN links cropped for your layout components
+                const originalUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=800&h=600&q=80`;
+                const thumbnailUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=300&h=225&q=70`;
+
                 return {
                     name,
                     description: faker.commerce.productDescription(),
                     image: {
                         originalName: `Large_${originalFilename}`,
-                        originalUrl: originalFilename,
+                        // originalUrl: originalFilename,
+                        originalUrl: originalUrl,
                         thumbnailName: `Thumb_${originalFilename}`,
-                        thumbnailUrl: thumbnailFilename,
+                        // thumbnailUrl: thumbnailFilename,
+                        thumbnailUrl: thumbnailUrl,
                         mimeType
                     } as Image
                 };
@@ -134,13 +158,59 @@ export class Seed {
                 } while (existingProductNames.has(name) || usedProductNames.has(name));
                 usedProductNames.add(name);
 
-                const ext = this.getRandomImageExtension();
-                const originalFilename = `${faker.string.alphanumeric(12)}_${faker.lorem.word()}.${ext}`;
-                const thumbnailFilename = `thumb_${originalFilename}`;
-                const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+                // const ext = this.getRandomImageExtension();
+                // const originalFilename = `${faker.string.alphanumeric(12)}_${faker.lorem.word()}.${ext}`;
+                // const thumbnailFilename = `thumb_${originalFilename}`;
+                // const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-                await this.createUploadFile(originalFilename, 1024);
-                await this.createUploadFile(thumbnailFilename, 512);
+                // await this.createUploadFile(originalFilename, 1024);
+                // await this.createUploadFile(thumbnailFilename, 512);
+
+                // --- GENERATE 3 DISTINCT IMAGES FOR THE CAROUSEL ---
+                // 1. Define a pool of verified, live Unsplash t-shirt photo IDs
+                const tshirtImageIds = [
+                    'photo-1521572267360-ee0c2909d518', // White Tee Front
+                    'photo-1583743814966-8936f5b7be1a', // Black Tee Minimalist
+                    'photo-1562157873-818bc0726f68', // Folded Streetwear Tees
+                    'photo-1576566588028-4147f3842f27', // Graphic Tee
+                    'photo-1618354691373-d851c5c3a990', // Folded Black Tee
+                    'photo-1527719327859-c6ce80353573'  // White Tee Studio
+                ];
+
+                // 2. Clear out your productImages array for this product slot
+                const productImages: Image[] = [];
+
+                // Shuffle the IDs so different products don't look exactly the same
+                const shuffledIds = [...tshirtImageIds].sort(() => 0.5 - Math.random());
+
+                // 3. Loop 3 times to build the gallery entries
+                for (let imgIndex = 0; imgIndex < 3; imgIndex++) {
+                    const ext = this.getRandomImageExtension();
+                    const uniqueId = faker.string.alphanumeric(12);
+                    
+                    const originalFilename = `${uniqueId}_${faker.lorem.word()}.${ext}`;
+                    const thumbnailFilename = `thumb_${originalFilename}`;
+                    const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+                    // Keeps your local mock filesystem files intact
+                    await this.createUploadFile(originalFilename, 1024);
+                    await this.createUploadFile(thumbnailFilename, 512);
+
+                    // Pick an ID out of our local array pool cleanly
+                    const photoId = shuffledIds[imgIndex % shuffledIds.length];
+
+                    // 🟢 CORRECT: Use the live images.unsplash.com CDN with strict aspect ratio parameters
+                    const originalUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=600&h=800&q=80`;
+                    const thumbnailUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=300&h=400&q=70`;
+
+                    productImages.push({
+                        originalName: `Large_${originalFilename}`,
+                        originalUrl: originalUrl, 
+                        thumbnailName: `Thumb_${originalFilename}`,
+                        thumbnailUrl: thumbnailUrl,
+                        mimeType
+                    } as Image);
+                }
 
                 // --- Updated Constraints ---
                 
@@ -164,13 +234,14 @@ export class Seed {
                     // Note: totalHT and totalTTC are removed because they are Getters in the Entity
                     isFavorite: faker.datatype.boolean(),
                     isAvailable: faker.datatype.boolean(),
-                    image: {
-                        originalName: `Large_${originalFilename}`,
-                        originalUrl: originalFilename,
-                        thumbnailName: `Thumb_${originalFilename}`,
-                        thumbnailUrl: thumbnailFilename,
-                        mimeType
-                    } as Image,
+                    images: productImages, // ✅ Assigning the 3 item collection array bundle cleanly
+                    // images: [{
+                    //     originalName: `Large_${originalFilename}`,
+                    //     originalUrl: originalFilename,
+                    //     thumbnailName: `Thumb_${originalFilename}`,
+                    //     thumbnailUrl: thumbnailFilename,
+                    //     mimeType
+                    // } as Image],
                     category
                 });
             }
@@ -307,18 +378,19 @@ export class Seed {
             let couponCode: string | null = null;
 
             if (coupons.length > 0 && faker.datatype.boolean({ probability: 0.3 })) {
-                couponEntity = faker.helpers.arrayElement(coupons);
-                couponCode = couponEntity.code;
+                const selectedCoupon = faker.helpers.arrayElement(coupons);
+                couponEntity = selectedCoupon; 
+                couponCode = selectedCoupon.code;
 
-                discount = Number((totalHT * (Number(couponEntity.discountPercentage) / 100)).toFixed(2));
+                discount = Number((totalHT * (Number(selectedCoupon.discountPercentage) / 100)).toFixed(2));
 
                 // Only increment coupon usage count metrics if the order is an active state
                 if (isAllocatedState) {
-                    couponEntity.usedCount += 1;
-                    if (couponEntity.usedCount >= couponEntity.maxUses) {
-                        couponEntity.isExpired = true;
+                    selectedCoupon.usedCount += 1;
+                    if (selectedCoupon.usedCount >= selectedCoupon.maxUses) {
+                        selectedCoupon.isExpired = true;
                     }
-                    await this.entityManager.save(Coupon, couponEntity);
+                    await this.entityManager.save(Coupon, selectedCoupon);
                 }
             }
 

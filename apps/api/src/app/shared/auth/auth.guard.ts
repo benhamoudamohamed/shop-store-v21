@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { jwtVerify } from 'jose';
+const { jwtVerify } = require('jose');
 import { TokenService } from '../../token/token.service';
 import { CustomJosePayload } from './jose-payload';
 

@@ -29,14 +29,14 @@ export class ProductSubscriber implements EntitySubscriberInterface<Product> {
   async beforeRemove(event: RemoveEvent<Product>) {
     // 🚨 The 'entity' in a cascade might be partial. 
     // If image ID is missing, we check the database one last time.
-    let imageId = event.entity?.image?.id;
+    let imageId = event.entity?.images?.[0]?.id;
 
     if (!imageId && event.entityId) {
         const product = await event.manager.findOne(Product, {
             where: { id: event.entityId },
-            relations: ['image']
+            relations: ['images']
         });
-        imageId = product?.image?.id;
+        imageId = product?.images?.[0]?.id;
     }
 
     if (imageId) {

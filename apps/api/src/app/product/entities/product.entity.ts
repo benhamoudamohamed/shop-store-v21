@@ -1,4 +1,4 @@
-import { Entity, Unique, BaseEntity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, OneToOne, UpdateDateColumn, OneToMany } from "typeorm";
+import { Entity, Unique, BaseEntity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, UpdateDateColumn, OneToMany } from "typeorm";
 import { Category } from '../../category/entities/category.entity';
 import { Image } from '../../image/entities/image.entity';
 import { OrderItem } from "../../orderItem/entities/order-item.entity";
@@ -54,14 +54,14 @@ export class Product extends BaseEntity {
     @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP(6)", onUpdate: "CURRENT_TIMESTAMP(6)" })
     updatedAt: Date;
 
-    @OneToOne(() => Image, {
+    @OneToMany(() => Image, (image) => image.product, {
         onDelete: "SET NULL",
         onUpdate: "CASCADE",
         nullable: true,
         cascade: true
     })
     @JoinColumn()
-    image: Image;
+    images: Image[];
 
     @ManyToOne(() => Category, category => category.products, {
         onDelete: "CASCADE",

@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+
+.grid .pi {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-family: 'primeicons' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family, sans-serif);
+  background-color: #121824; 
+  color: #f8fafc;
+}
+
+/* --- Core Layout Structural Base --- */
+.layout-wrapper {
+  min-height: 100vh;
+  display: block !important;
+  overflow-x: hidden !important;
+}
+
+/* Topbar Polishing */
+.layout-topbar {
+  background-color: #1f293d !important;
+  border-bottom: 1px solid #334155 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.layout-topbar-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.layout-topbar-button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+}
+
+/* --- Navigation Menu Styling --- */
+.layout-menuitem-root-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 1.5rem;
+}
+
+.layout-menu li a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #cbd5e1;
+  border-radius: 12px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.layout-menu li a:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: #f8fafc;
+}
+
+.layout-menu li a i {
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+
+/* Active Navigation Tracking States */
+.layout-menu li a.text-indigo-600 {
+  background-color: rgba(52, 211, 153, 0.1) !important; 
+  color: #34d399 !important;
+}
+.layout-menu li a.text-indigo-600 i {
+  color: #34d399 !important;
+}
+
+/* PrimeNG General Transitions */
+@media (prefers-reduced-motion: no-preference) {
+  .p-overlay, .p-component, .p-datatable-tbody > tr {
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+/* ========================================== */
+/* UNIFIED RESPONSIVE TRANSITION ENGINE     */
+/* ========================================== */
+
+/* --- MOBILE SPECIFIC VIEWPORTS (< 992px) --- */
+@media (max-width: 991px) {
+  .layout-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    width: 280px !important;
+    background-color: #1f293d !important;
+    border-right: 1px solid #334155 !important;
+    z-index: 999 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+    
+    /* Strict Horizontal Baseline Initialization */
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Slide in left cleanly when mobile layout toggle triggers */
+  .layout-mobile-active .layout-sidebar {
+    transform: translateX(0) !important;
+  }
+  .layout-main-container {
+    padding-top: 5rem !important; /* ✅ Matches topbar height perfectly to prevent clipping */
+  }
+}
+
+/* --- DESKTOP SPECIFIC VIEWPORTS (>= 992px) --- */
+@media (min-width: 992px) {
+  .layout-sidebar {
+    position: fixed !important;
+    top: 2rem !important; /* Adjust if topbar height differs */
+    left: 0 !important;
+    height: calc(100vh - 1rem) !important;
+    width: 270px !important;
+    background-color: #1f293d !important;
+    border-right: 1px solid #334155 !important;
+    
+    /* Hardware accelerated transition setup */
+    transform: translateX(0) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .layout-main-container {
+    margin-left: 270px !important;
+    padding-top: 5rem !important;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* ✅ COLLAPSE BEHAVIOR: Shift the Sidebar Left and Reset Content Grid Spacing */
+  .layout-static-inactive .layout-sidebar {
+    transform: translateX(-100%) !important;
+  }
+
+  .layout-static-inactive .layout-main-container {
+    margin-left: 0 !important;
+  }
+  .close-button {
+    display: none !important;
+  }
+}

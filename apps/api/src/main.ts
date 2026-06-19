@@ -13,10 +13,27 @@ export const GLOBAL_PAGINATION_CONFIG: PaginateConfig<any> = {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const allowedOrigins = [
+    'http://localhost:4200', // Client Dashboard App
+    'http://localhost:4300'  // Admin Store App
+  ];
+
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Blocked by CORS policy: Origin not allowed.'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
+
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const mode = process.env.NODE_ENV;

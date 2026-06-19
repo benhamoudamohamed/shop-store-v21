@@ -60,10 +60,39 @@ export type EmailType = {
   buttonTitle: string;
 }
 
-export type ProductModel = {
-  productName: string;
-  image?: string;
-  price: number;
-  quantity: number;
-  cost?: number;
+export type Product = {
+  id: string;
+  productCode: string;
+  name: string;
+  description: string;
+  unitPrice: number;
+  tvaRate: number;
+  totalTTC: number;
+  stock: number;
+  isFavorite: boolean;
+  isAvailable: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  images: Image[];
+  category: Category;
+  // orderItems: OrderItem[];
+}
+
+export type Category = {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: Date;
+  image: Image;
+  products: Product[];
+}
+
+export type Image = {
+  id: string;
+  originalName: string;
+  originalUrl: string;
+  thumbnailName: string;
+  thumbnailUrl: string;
+  mimeType: string;
+  createdAt: Date;
 }

@@ -34,7 +34,7 @@ export class ProductService extends Seed {
     
     const [products, count] = await this.productRepository
     .createQueryBuilder("product")
-    .leftJoinAndSelect("product.image", "image")
+    .leftJoinAndSelect("product.images", "images")
     .orderBy('product.createdAt', 'DESC')
     .getManyAndCount()
 
@@ -52,7 +52,7 @@ export class ProductService extends Seed {
   async findbyId(id: string): Promise<Product>  {
     const product = await this.productRepository.findOne({ 
       where: { id }, 
-      relations: ['image', 'category'] 
+      relations: ['images', 'category'] 
     }); 
 
     if(!product) {
@@ -76,7 +76,7 @@ export class ProductService extends Seed {
     const [products, count] = await this.productRepository
     .createQueryBuilder("product")
     .where("product.isFavorite = :isFavorite", { isFavorite })
-    .leftJoinAndSelect("product.image", "image")
+    .leftJoinAndSelect("product.images", "images")
     .leftJoinAndSelect("product.category", "category")
     .orderBy('product.createdAt', 'DESC')
     .getManyAndCount()
@@ -92,7 +92,7 @@ export class ProductService extends Seed {
    * Create a new product, attach the uploaded image, and associate it with a category.
    * Also generates a category-based product code and computes the final total price.
    */
-  async create(data: CreateProductDto, file: Express.Multer.File, catID: string): Promise<Partial<Product> & { totalTTC: number }> {
+  async create(data: CreateProductDto, files: Express.Multer.File[], catID: string): Promise<Partial<Product> & { totalTTC: number }> {
     const category = await this.categoryRepository.findOne({where: {id: catID}});
     if(!category) {
       this.logger.error(`🟥 findOne category not found with id: ${catID}`)
@@ -108,7 +108,7 @@ export class ProductService extends Seed {
 
     const productCode = `${prefix}-${generateRandom()}`;
 
-    const imageEntity = await this.imageService.upload(file);
+    const imageEntities = await this.imageService.uploadMultiple(files);
      
     // 1. Convert inputs to numbers to ensure math safety
     const unitPrice = Number(data.unitPrice);
@@ -119,16 +119,17 @@ export class ProductService extends Seed {
       unitPrice,      // Save the base price
       tvaRate,        // Save the % rate (e.g., 19)
       productCode,
-      image: imageEntity,
+      images: imageEntities,
       category,
     });
 
     const savedProduct = await this.productRepository.save(product);
     this.logger.log(`✅ create Product Successfully with ${product.name}`);
 
-    const { ...productData } = savedProduct; 
+    const { images, ...productData } = savedProduct;
     return {
       ...productData,
+      images: images,
       totalTTC: savedProduct.totalTTC // Explicitly set the calculated value
     };
   }
@@ -136,10 +137,10 @@ export class ProductService extends Seed {
   /**
    * Update an existing product, optionally replace its image, and refresh category links.
    */
-  async update(id: string, catID: string, data: CreateProductDto, file?: Express.Multer.File): Promise<Partial<Product> & { totalTTC: number }> {
+  async update(id: string, catID: string, data: CreateProductDto, files?: Express.Multer.File[]): Promise<Partial<Product> & { totalTTC: number }> {
     const product = await this.productRepository.findOne({ 
       where: { id }, 
-      relations: ['image', 'category']
+      relations: ['images', 'category']
     }); 
     if (!product) {
       throw new HttpException({ status: HttpStatus.NOT_FOUND, error: 'Product not found' }, HttpStatus.NOT_FOUND);
@@ -151,8 +152,12 @@ export class ProductService extends Seed {
       throw new HttpException({status: HttpStatus.NOT_FOUND, error: 'Category not found', }, HttpStatus.NOT_FOUND);
     }
 
-    if (file) {
-      product.image = await this.imageService.uploadAndReplace(product.image?.id, file);
+    if (files && files.length > 0) {
+      if (product.images && product.images.length > 0) {
+        await this.imageService.deleteMultiple(product.images);
+      }
+      // Upload the brand-new batch and overwrite the tracking field completely
+      product.images = await this.imageService.uploadMultiple(files);
     }
 
     product.category = category;
@@ -166,9 +171,10 @@ export class ProductService extends Seed {
 
     this.logger.log(`✅ Update product successfully ${product.name}`);
 
-    const { ...productData } = updatedProduct; 
+    const { images, ...productData } = updatedProduct;
     return {
       ...productData,
+      images: images,
       totalTTC: updatedProduct.totalTTC
     };
   }
@@ -178,7 +184,7 @@ export class ProductService extends Seed {
    */
   async delete(id: string): Promise<{ message: string }> {
     const product = await this.findbyId(id)
-    const oldImageId = product.image?.id;
+    const oldImageId = product.images?.[0]?.id;
     
     await this.imageService.deleteImage(oldImageId);
     await this.productRepository.delete(product.id)

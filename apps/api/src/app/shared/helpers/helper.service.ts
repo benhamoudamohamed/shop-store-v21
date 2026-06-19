@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as argon2 from 'argon2';
-import { SignJWT } from "jose";
+const { SignJWT } = require('jose');
 import { CustomJosePayload } from "../auth/jose-payload";
 import { customAlphabet } from "nanoid";
 import { TokenType } from "@youssef-brand/shared/shared-types";

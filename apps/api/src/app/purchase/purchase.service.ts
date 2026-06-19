@@ -28,7 +28,7 @@ export class PurchaseService extends Seed {
     private purchaseStatusService: PurchaseStatusService,
   ) {
     super(entityManager)
-    // this.fakeIt(Purchase)
+    // this.fakeIt(Purchase);
   }
 
   /**

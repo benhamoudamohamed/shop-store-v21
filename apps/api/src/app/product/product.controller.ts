@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, HttpCode, HttpStatus, UseGuards, UploadedFile, UseInterceptors, ParseBoolPipe, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, HttpCode, HttpStatus, UseGuards, UseInterceptors, ParseBoolPipe, Put, UploadedFiles } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product } from './entities/product.entity';
 import { AuthenticationGuard } from '../shared/auth/auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { multerOptions } from '../../../config/multer-config';
 
 /**
@@ -44,29 +44,29 @@ export class ProductController {
    * Protected endpoint to create a product under a specific category.
    */
   @UseGuards(AuthenticationGuard)
-  @UseInterceptors(FileInterceptor('file', multerOptions))
+  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   @Post('category/:catID')
   @HttpCode(HttpStatus.CREATED)
   create(
-    @UploadedFile() file: Express.Multer.File, 
+    @UploadedFiles() files: Express.Multer.File[],
     @Body() data: CreateProductDto, 
     @Param('catID') catID: string): Promise<Partial<Product> & { totalTTC: number }> {
-    return this.productService.create(data, file, catID);
+    return this.productService.create(data, files, catID);
   }
 
   /**
    * Protected endpoint to update a product and optionally replace its image.
    */
   @UseGuards(AuthenticationGuard)
-  @UseInterceptors(FileInterceptor('file', multerOptions))
+  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   @Put(':id/category/:catID')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   async update(
     @Param('id') id: string,
     @Param('catID') catID: string,
     @Body() data: CreateProductDto,
-    @UploadedFile() file?: Express.Multer.File): Promise<Partial<Product> & { totalTTC: number }> {
-    return this.productService.update(id, catID, data, file);
+    @UploadedFiles() files?: Express.Multer.File[]): Promise<Partial<Product> & { totalTTC: number }> {
+    return this.productService.update(id, catID, data, files);
   }
 
   /**

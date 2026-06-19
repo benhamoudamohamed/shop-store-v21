@@ -18,7 +18,7 @@ export class CategoryService extends Seed {
     private categoryRepository: Repository<Category>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
-    private readonly imageService: ImageService) { 
+    private readonly imageService: ImageService) {  
     super(entityManager)
     // this.fakeIt(Category)
   }
@@ -125,8 +125,8 @@ export class CategoryService extends Seed {
     // Loop through products and delete their images from the DISK
     if (category.products && category.products.length > 0) {
       for (const product of category.products) {
-        if (product.image?.id) {
-          await this.imageService.deleteImage(product.image.id);
+        if (product.images?.[0]?.id) {
+          await this.imageService.deleteImage(product.images[0].id);
           this.logger.log(`🗑️ Disk: Deleted product image for ${product.name}`);
         }
       }
