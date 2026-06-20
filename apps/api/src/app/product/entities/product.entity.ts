@@ -1,4 +1,4 @@
-import { Entity, Unique, BaseEntity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, UpdateDateColumn, OneToMany } from "typeorm";
+import { Entity, Unique, BaseEntity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, UpdateDateColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
 import { Category } from '../../category/entities/category.entity';
 import { Image } from '../../image/entities/image.entity';
 import { OrderItem } from "../../orderItem/entities/order-item.entity";
@@ -48,19 +48,24 @@ export class Product extends BaseEntity {
     })
     isAvailable: boolean;
 
+    @Column({ type: 'boolean', default: false })
+    isNewArrival: boolean; 
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: null })
+    compareAtPrice: number | null; // 👈 Holds the original retail value if it's on sale
+
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP(6)" })
     createdAt: Date;
 
     @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP(6)", onUpdate: "CURRENT_TIMESTAMP(6)" })
     updatedAt: Date;
 
-    @OneToMany(() => Image, (image) => image.product, {
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE",
-        nullable: true,
-        cascade: true
+    @ManyToMany(() => Image, { 
+        cascade: true, 
+        eager: true,
+        onDelete: 'CASCADE' // If a product is deleted, remove its associations from the join table
     })
-    @JoinColumn()
+    @JoinTable({ name: 'product_images' }) // Explicitly naming the join table keeps things organized
     images: Image[];
 
     @ManyToOne(() => Category, category => category.products, {

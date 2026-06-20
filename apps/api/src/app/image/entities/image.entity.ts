@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany } from "typeorm";
 import { Product } from "../../product/entities/product.entity";
 
 @Entity()
@@ -21,8 +21,8 @@ export class Image {
     @Column({ nullable: true })
     mimeType: string;
 
-    @ManyToOne(() => Product, (product) => product.images, { onDelete: 'CASCADE' })
-    product: Product;
+    @ManyToMany(() => Product, (product) => product.images)
+    products: Product[];
 
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP(6)" })
     createdAt: Date;

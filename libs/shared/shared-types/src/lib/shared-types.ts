@@ -68,9 +68,11 @@ export type Product = {
   unitPrice: number;
   tvaRate: number;
   totalTTC: number;
+  originalPriceTTC: number;
   stock: number;
   isFavorite: boolean;
   isAvailable: boolean;
+  isNewArrival: boolean;
   createdAt: Date;
   updatedAt: Date;
   images: Image[];

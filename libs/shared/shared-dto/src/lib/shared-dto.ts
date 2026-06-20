@@ -51,3 +51,42 @@ const UpdateUserPasswordSchema = CredentialsSchema.pick({
 });
 // 2. Create the DTO class from that specific restricted schema
 export class UpdateUserPasswordDto extends createZodDto(UpdateUserPasswordSchema) {}
+
+
+
+// get totalTTC() as a computed property in the response DTO by defining a transformation in the Zod schema// 1. Keep this core transformer
+export const SingleProductSchema = z.any().transform((entity) => {
+  const price = Number(entity.unitPrice || 0);
+  const rate = Number(entity.tvaRate || 0);
+  const taxAmount = 1 + Number(entity.tvaRate || 0) / 100;
+  const totalTTC = Number((Number(entity.unitPrice) * taxAmount).toFixed(2));
+  const originalPriceTTC = entity.compareAtPrice ? Number((Number(entity.compareAtPrice) * taxAmount).toFixed(2)) : null;
+
+  return {
+    id: Number(entity.id),
+    productCode: String(entity.productCode),
+    name: String(entity.name),
+    description: String(entity.description || ''),
+    unitPrice: price,
+    tvaRate: rate,
+    stock: Number(entity.stock || 0),
+    isFavorite: Boolean(entity.isFavorite),
+    isAvailable: Boolean(entity.isAvailable),
+    isNewArrival: Boolean(entity.isNewArrival),
+    images: entity.images || [],
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+    totalTTC: totalTTC,
+    originalPriceTTC: originalPriceTTC,
+  };
+});
+
+// 2. This remains your DTO class for paginated lists: GET /products/all
+export const ProductResponseSchema = z.object({
+  data: z.array(SingleProductSchema),
+  count: z.number(),
+});
+export class ProductResponseDto extends createZodDto(ProductResponseSchema) {}
+
+// 3. 🟢 ADD THIS: Your new DTO class for single product lookups: GET /products/:id
+export class SingleProductResponseDto extends createZodDto(SingleProductSchema) {}

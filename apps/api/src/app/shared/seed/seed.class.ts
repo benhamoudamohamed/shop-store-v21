@@ -69,22 +69,19 @@ export class Seed {
         const usedCategoryNames = new Set<string>();
 
         const categoryImageIds = [
-            'photo-1541701494587-cb58502866ab', // Abstract colorful waves
-            'photo-1507525428034-b723cf961d3e', // Clean minimal aesthetic
-            'photo-1513542789411-b6a5d4f31634', // Geometric pattern
-            'photo-1441986300917-64674bd600d8', // Clothing store boutique interior
-            'photo-1528459801416-a9e53bbf4e17', // Marble abstract texture
-            'photo-1506157786151-b8491531f063', // Fashion fabric texture
-            'photo-1532453288672-3a27e9be9efd', // Organized retail racks
-            'photo-1618005182384-a83a8bd57fbe', // Modern 3D digital art shape
-            'photo-1485125639709-a60c3a500bf1', // Minimalist apparel items
-            'photo-1550684848-fac1c5b4e853'  // Dark sleek gradient geometric
+            'photo-1618354691373-d851c5c3a990', // 👈 FIXED: The exact black & white folded crew neck t-shirt lay you requested
+            'photo-1523381210434-271e8be1f52b', // Minimalist plain t-shirt flat lay paired with sunglasses
+            'photo-1576566588028-4147f3842f27', // Graphic retail apparel tee hanging on a rustic wooden torso hanger
+            'photo-1562157873-818bc0726f68', // Structured stacks of neatly folded blank colored t-shirts
+            'photo-1620799140408-edc6dcb6d633', // Basic essential gray crewneck hanging against an empty concrete wall
+            'photo-1583743814966-8936f5b7be1a', // Heavy combed jet-black cotton t-shirt focus mockup
         ];
+
         // Shuffle the categories photo IDs array pool
         const shuffledCategoryIds = [...categoryImageIds].sort(() => 0.5 - Math.random());
 
         return await Promise.all(
-            Array.from({ length: 10 }).map<Promise<Partial<Category>>>(async (_, index) => {
+            Array.from({ length: 5 }).map<Promise<Partial<Category>>>(async (_, index) => {
                 let name: string;
                 do {
                     name = `${faker.commerce.productName()} ${faker.string.alphanumeric(4)}`;
@@ -103,7 +100,7 @@ export class Seed {
                 const photoId = shuffledCategoryIds[index % shuffledCategoryIds.length];
 
                 // Build bulletproof production CDN links cropped for your layout components
-                const originalUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=800&h=600&q=80`;
+                const originalUrl = `https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=800&h=600&q=80`;
                 const thumbnailUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=300&h=225&q=70`;
 
                 return {
@@ -125,7 +122,7 @@ export class Seed {
 
     // Product entity
     private async addProduct(): Promise<Array<Partial<Product>>> {
-        this.logger.log(`📦 Seeding Products`);
+        this.logger.log(`📦 Seeding Products with Retail Discount Logic`);
 
         const categories = await this.entityManager.find(Category);
         if (categories.length === 0) {
@@ -143,9 +140,9 @@ export class Seed {
         const usedProductNames = new Set<string>();
 
         const products: Array<Partial<Product>> = [];
-
+ 
         for (const category of categories) {
-            for (let i = 0; i < 10; i += 1) {
+            for (let i = 0; i < 1; i += 1) { // Current loop setup: 1 product per category
                 let productCode: string;
                 do {
                     productCode = faker.string.alphanumeric(6).toUpperCase();
@@ -158,32 +155,18 @@ export class Seed {
                 } while (existingProductNames.has(name) || usedProductNames.has(name));
                 usedProductNames.add(name);
 
-                // const ext = this.getRandomImageExtension();
-                // const originalFilename = `${faker.string.alphanumeric(12)}_${faker.lorem.word()}.${ext}`;
-                // const thumbnailFilename = `thumb_${originalFilename}`;
-                // const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-
-                // await this.createUploadFile(originalFilename, 1024);
-                // await this.createUploadFile(thumbnailFilename, 512);
-
                 // --- GENERATE 3 DISTINCT IMAGES FOR THE CAROUSEL ---
-                // 1. Define a pool of verified, live Unsplash t-shirt photo IDs
                 const tshirtImageIds = [
-                    'photo-1521572267360-ee0c2909d518', // White Tee Front
-                    'photo-1583743814966-8936f5b7be1a', // Black Tee Minimalist
-                    'photo-1562157873-818bc0726f68', // Folded Streetwear Tees
-                    'photo-1576566588028-4147f3842f27', // Graphic Tee
-                    'photo-1618354691373-d851c5c3a990', // Folded Black Tee
-                    'photo-1527719327859-c6ce80353573'  // White Tee Studio
+                    'photo-1618354691373-d851c5c3a990', 
+                    'photo-1583743814966-8936f5b7be1a', 
+                    'photo-1562157873-818bc0726f68', 
+                    'photo-1576566588028-4147f3842f27', 
+                    'photo-1620799140408-edc6dcb6d633', 
                 ];
 
-                // 2. Clear out your productImages array for this product slot
                 const productImages: Image[] = [];
-
-                // Shuffle the IDs so different products don't look exactly the same
                 const shuffledIds = [...tshirtImageIds].sort(() => 0.5 - Math.random());
 
-                // 3. Loop 3 times to build the gallery entries
                 for (let imgIndex = 0; imgIndex < 3; imgIndex++) {
                     const ext = this.getRandomImageExtension();
                     const uniqueId = faker.string.alphanumeric(12);
@@ -192,56 +175,56 @@ export class Seed {
                     const thumbnailFilename = `thumb_${originalFilename}`;
                     const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-                    // Keeps your local mock filesystem files intact
                     await this.createUploadFile(originalFilename, 1024);
                     await this.createUploadFile(thumbnailFilename, 512);
 
-                    // Pick an ID out of our local array pool cleanly
                     const photoId = shuffledIds[imgIndex % shuffledIds.length];
-
-                    // 🟢 CORRECT: Use the live images.unsplash.com CDN with strict aspect ratio parameters
                     const originalUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=600&h=800&q=80`;
                     const thumbnailUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=300&h=400&q=70`;
 
-                    productImages.push({
+                    // 🟢 FIX: Explicitly instantiate via EntityManager so TypeORM tracks the cascade entity properly
+                    const imgEntity = this.entityManager.create(Image, {
                         originalName: `Large_${originalFilename}`,
                         originalUrl: originalUrl, 
                         thumbnailName: `Thumb_${originalFilename}`,
                         thumbnailUrl: thumbnailUrl,
                         mimeType
-                    } as Image);
+                    });
+
+                    productImages.push(imgEntity);
                 }
 
-                // --- Updated Constraints ---
-                
-                // 1. unitPrice max 200
-                const unitPrice = Number(faker.commerce.price({ min: 5, max: 200, dec: 2 }));
-
-                // 2. tvaRate as percentage, max 20%
-                // Common Tunisian rates are 7, 13, 19, but we'll randomize up to 20
+                // --- Basic Pricing & Constraints Setup ---
+                const baseCostPrice = Number(faker.commerce.price({ min: 15, max: 150, dec: 2 }));
                 const tvaRate = faker.number.int({ min: 5, max: 20 });
-
-                // 3. stock max 250
                 const stock = faker.number.int({ min: 0, max: 250 });
+
+                let unitPrice: number;
+                let compareAtPrice: number | null;
+                const isNewArrival = faker.datatype.boolean(); 
+
+                if (isNewArrival) {
+                    unitPrice = baseCostPrice;
+                    compareAtPrice = null;
+                } else {
+                    unitPrice = baseCostPrice;
+                    const markupPercent = faker.number.int({ min: 15, max: 30 });
+                    const calculatedComparePrice = unitPrice * (1 + markupPercent / 100);
+                    compareAtPrice = Number(calculatedComparePrice.toFixed(2));
+                }
 
                 products.push({
                     productCode,
                     name,
                     description: faker.commerce.productDescription(),
                     unitPrice,
-                    tvaRate, // Matches our new Entity field name
+                    compareAtPrice,
+                    tvaRate, 
                     stock,
-                    // Note: totalHT and totalTTC are removed because they are Getters in the Entity
                     isFavorite: faker.datatype.boolean(),
                     isAvailable: faker.datatype.boolean(),
-                    images: productImages, // ✅ Assigning the 3 item collection array bundle cleanly
-                    // images: [{
-                    //     originalName: `Large_${originalFilename}`,
-                    //     originalUrl: originalFilename,
-                    //     thumbnailName: `Thumb_${originalFilename}`,
-                    //     thumbnailUrl: thumbnailFilename,
-                    //     mimeType
-                    // } as Image],
+                    isNewArrival, 
+                    images: productImages, // ✅ Clean array populated with structured image entities
                     category
                 });
             }

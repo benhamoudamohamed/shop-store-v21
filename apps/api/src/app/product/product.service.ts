@@ -24,7 +24,7 @@ export class ProductService extends Seed {
     private categoryRepository: Repository<Category>,
     private readonly imageService: ImageService) { 
     super(entityManager)
-    // this.fakeIt(Product) 
+    // this.fakeIt(Product)
   }
 
   /**

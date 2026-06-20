@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Body, Param, Delete, HttpCode, HttpStatus, UseGuards, UseInterceptors, ParseBoolPipe, Put, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ZodSerializerDto } from 'nestjs-zod';
+import { multerOptions } from '../../../config/multer-config';
 import { ProductService } from './product.service';
-import { CreateProductDto } from './dto/create-product.dto';
 import { Product } from './entities/product.entity';
 import { AuthenticationGuard } from '../shared/auth/auth.guard';
-import { FilesInterceptor } from '@nestjs/platform-express';
-import { multerOptions } from '../../../config/multer-config';
+import { CreateProductDto } from './dto/create-product.dto';
+import { ProductResponseDto, SingleProductResponseDto } from '@youssef-brand/shared/shared-dto';
 
 /**
  * Controller exposing product management endpoints.
@@ -19,6 +21,7 @@ export class ProductController {
    */
   @Get('/all')
   @HttpCode(HttpStatus.OK)
+  @ZodSerializerDto(ProductResponseDto)
   findAll(): Promise<{ data: Product[]; count: number }> {  
     return this.productService.findAll();
   }
@@ -28,6 +31,7 @@ export class ProductController {
    */
   @Get('/:id')
   @HttpCode(HttpStatus.OK)
+  @ZodSerializerDto(SingleProductResponseDto)
   findbyId(@Param('id') id: string): Promise<Product> {
     return this.productService.findbyId(id);
   }

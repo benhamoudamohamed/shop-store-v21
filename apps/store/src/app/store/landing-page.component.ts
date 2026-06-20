@@ -222,6 +222,15 @@ import { Product } from '@youssef-brand/shared/shared-types';
                 </button>
             </div>
 
+            <div style="position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 20;">
+              <span *ngIf="product.isNewArrival" style="background: #3b82f6; color: #ffffff; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;">
+                  New
+              </span>
+              <span *ngIf="product.originalPriceTTC" style="background: #ef4444; color: #ffffff; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Sale
+              </span>
+            </div>
+
             <!-- --- DESCRIPTION PRODUCT INFO LABELS --- -->
             <div style="padding-top: 15px; box-sizing: border-box;">
                 <h3 style="
@@ -235,15 +244,14 @@ import { Product } from '@youssef-brand/shared/shared-types';
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <!-- Active Base/Sale Price Field -->
                     <span style="font-size: 13px; font-weight: 600; color: #ffffff;">
-                        {{ product.totalTTC | number:'1.3-3' }}
+                        {{ product.totalTTC | number:'1.3-3' }} DT
                     </span>
                     <!-- Original Slashed Comparison Price Field -->
                     <span *ngIf="product.totalTTC" style="
                         font-size: 12px;
                         color: #64748b;
-                        text-decoration: line-through;
-                    ">
-                        {{ product.totalTTC | number:'1.3-3' }}
+                        text-decoration: line-through;">
+                        {{ product.originalPriceTTC | number:'1.3-3' }} DT
                     </span>
                 </div>
             </div>
